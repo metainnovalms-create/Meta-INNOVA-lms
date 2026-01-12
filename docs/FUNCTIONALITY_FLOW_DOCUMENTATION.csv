@@ -1,0 +1,233 @@
+Role,Menu Item,Route,Tab Name,Display Components,Component Type,Data Displayed,Actions Available,Functionality Description
+Super Admin,Dashboard,/super-admin/dashboard,Main View,"System Uptime Card, API Calls Card, Database Size Card, Storage Used Card",Statistics Cards,"99.9% uptime, 1.25M API calls, 142.8GB database, 458.5GB storage",View metrics,Monitor technical platform health
+Super Admin,Dashboard,/super-admin/dashboard,Main View,System Health Card,Status Card,"Database Status, API Gateway, Storage System, Email Service status",View system status,Real-time operational status monitoring
+Super Admin,Dashboard,/super-admin/dashboard,Main View,Infrastructure Metrics Card,Metrics Card,"CPU: 45%, Memory: 62%, Network I/O: 128MB/s, Connections: 342","View performance metrics, Run health check",Monitor infrastructure performance
+Super Admin,System Config,/super-admin/system-config,Main View,Configuration Settings Panel,Settings Panel,System-wide configuration parameters,"Edit settings, Save changes",Configure system parameters
+Super Admin,Audit Logs,/super-admin/audit-logs,Main View,Audit Logs Table,Data Table,"User actions, timestamps, IP addresses, changes made","Search logs, Filter by user/date/action, Export logs",View complete system activity history
+
+System Admin,Dashboard,/system-admin/dashboard,Main View,"Total Tenants Card, Active Subscriptions Card, Total Users Card, Expiring Licenses Card, Pending Leave Approvals Card",Statistics Cards,"15 tenants, 12 active subscriptions, 8234 users, 3 expiring licenses, dynamic leave count","Navigate to linked pages, View details",Overview of platform-wide statistics
+System Admin,Dashboard,/system-admin/dashboard,Main View,System Alerts Box,Alert Panel,"Critical alerts with severity levels (Warning, Success, Error)",View alert details,Monitor critical system notifications
+System Admin,Dashboard,/system-admin/dashboard,Main View,Top Tenants Box,Ranking Card,"Institution names, user counts, growth percentages",View tenant details,Track institution performance
+System Admin,Dashboard,/system-admin/dashboard,Main View,Recent Tenants Box,List Card,"Name, Type, Location, Added Date",View institution details,Monitor recent additions
+System Admin,Dashboard,/system-admin/dashboard,Main View,Quick Actions Section,Action Buttons,Navigation links to key sections,Navigate to sections,Quick access to management areas
+
+System Admin,Institution Management,/system-admin/institutions,Institutions List,"Summary Cards (Total, Active, Users, Expiring)",Statistics Cards,"Total count, active count, user count, licenses expiring in 30 days",View metrics,Overview of all institutions
+System Admin,Institution Management,/system-admin/institutions,Institutions List,"Search Bar, Type Filter, Status Filter, License Filter",Filter Controls,Search by name/code/location and filter options,"Search, Filter by type/status/license",Find specific institutions
+System Admin,Institution Management,/system-admin/institutions,Institutions List,Institutions Table,Data Table,"Name, Code, Type, Location, Users (current/max), License Type, Expiry Date, Status","Click row to view details, Sort columns",View and navigate to institution details
+System Admin,Institution Management,/system-admin/institutions,Add Institution,Basic Information Form,Form Fields,"Organization Name, Slug, Type, Location, Established Year","Fill form, Submit",Create new institution record
+System Admin,Institution Management,/system-admin/institutions,Add Institution,Contact Information Form,Form Fields,"Email, Phone, Admin Name, Admin Email","Fill form, Submit",Set institution contact details
+System Admin,Institution Management,/system-admin/institutions,Add Institution,Subscription & License Form,Form Fields,"License Type, Max Users, Subscription Plan","Select options, Submit",Configure institution subscription
+System Admin,Institution Management,/system-admin/institutions,License Management,License Management Panel,Data Table,"Institution list with license details, expiry tracking","View licenses, Renew, Filter by type",Manage all institution licenses
+System Admin,Institution Management,/system-admin/institutions,Renewals & Contracts,Contracts Panel,Data Table,"Contract status, renewal pipeline, MOU documents","Filter by status, Upload MOU, View contracts",Track and manage contracts
+
+System Admin,Institution Detail,/system-admin/institutions/:id,Overview,Institution Information Card,Info Card,"Logo, Name, Code, Type, Location, Established Year, Email, Phone","View details, Edit institution",View institution profile
+System Admin,Institution Detail,/system-admin/institutions/:id,Overview,Statistics Cards,Metric Cards,"Total Students, Total Faculty, Classes count, Storage Used",View metrics,Monitor institution statistics
+System Admin,Institution Detail,/system-admin/institutions/:id,Overview,License & Subscription Card,License Card,"Type, Status, Max Users, Current Users, Expiry Date, Features",View license info,Track license usage and status
+System Admin,Institution Detail,/system-admin/institutions/:id,Students by Class,Class Management Header,Action Button,Add Class button,"Click to add class, Opens dialog",Create new custom classes
+System Admin,Institution Detail,/system-admin/institutions/:id,Students by Class,Empty State Message,Placeholder,"No classes created yet message",Create first class,Prompt to create initial class
+System Admin,Institution Detail,/system-admin/institutions/:id,Students by Class,Class Card Header,Collapsible Card,"Class Name, Student Count, Room Number, Capacity","Expand/Collapse, Edit, Delete",Manage class details
+System Admin,Institution Detail,/system-admin/institutions/:id,Students by Class,Class Action Buttons,Action Buttons,"Add Student, Bulk Upload, Download Template buttons","Add student, Upload CSV, Download template",Manage class enrollment
+System Admin,Institution Detail,/system-admin/institutions/:id,Students by Class,Class Statistics Cards,Metric Cards,"Total Students, Boys, Girls, Average Attendance",View class metrics,Monitor class statistics
+System Admin,Institution Detail,/system-admin/institutions/:id,Students by Class,Student Table,Data Table,"Photo, Name, Roll Number, Admission Number, Gender, DOB, Age, Parent Name, Phone, Status","Search, Click row for details, Edit",View and manage class students
+System Admin,Institution Detail,/system-admin/institutions/:id,Students by Class,Add Class Dialog,Form Dialog,"Class Name, Display Order, Academic Year, Capacity, Room Number","Fill form, Submit, Cancel",Create custom class for institution
+System Admin,Institution Detail,/system-admin/institutions/:id,Students by Class,Edit Class Dialog,Form Dialog,Pre-filled class details,"Update fields, Save, Cancel",Modify existing class details
+System Admin,Institution Detail,/system-admin/institutions/:id,Students by Class,Delete Class Confirmation,Confirmation Dialog,Class name and warning message,"Confirm delete, Cancel",Remove class (if no students)
+System Admin,Institution Detail,/system-admin/institutions/:id,Students by Class,Add Student Dialog,Form Dialog,"Name, Roll Number, Admission Number, Class, DOB, Gender, Parent details, Address, Blood Group","Fill form, Submit, Cancel",Add student to specific class
+System Admin,Institution Detail,/system-admin/institutions/:id,Students by Class,Bulk Upload Dialog,Upload Dialog,"Class name display, CSV file upload, Import results","Select file, Upload, View results",Import multiple students to class
+System Admin,Institution Detail,/system-admin/institutions/:id,Students by Class,Edit Student Dialog,Form Dialog,Pre-filled student data,"Update fields, Save, Cancel",Modify student information
+System Admin,Institution Detail,/system-admin/institutions/:id,Students by Class,Student Details Dialog,Detail Dialog,Complete student profile,"View info, Edit, Delete",View comprehensive student data
+System Admin,Institution Detail,/system-admin/institutions/:id,Reports,Reports Panel,Report Interface,Report generation interface,"Generate reports, Export",Create institution reports
+
+System Admin,Course Management,/system-admin/course-management,Main View,"Search Bar, Category Filter, Difficulty Filter, Status Filter",Filter Controls,Search and filter controls,"Search, Filter by category/difficulty/status",Find specific courses
+System Admin,Course Management,/system-admin/course-management,Main View,Create New Course Button,Action Button,Button to create course,Click to create course,Start new course creation
+System Admin,Course Management,/system-admin/course-management,Main View,Courses List,Card Grid/Table,"Thumbnail, Code, Title, Category, Difficulty, Duration, Modules, Enrollments, Status","View details, Edit, Delete, Click card",Manage all courses
+
+System Admin,Course Detail,/system-admin/course-management/:id,Overview,Course Header,Header Section,"Thumbnail, Title, Code, Category, Difficulty, Status","Edit details, Change status",View course summary
+System Admin,Course Detail,/system-admin/course-management/:id,Overview,Course Information,Info Panel,"Description, Prerequisites, Learning Objectives, Duration, Modules, Enrollments",View course details,Review course information
+System Admin,Course Detail,/system-admin/course-management/:id,Curriculum,Add Module Button,Action Button,Button to add module,Click to add module,Create new module
+System Admin,Course Detail,/system-admin/course-management/:id,Curriculum,Module Card,Accordion/Card,"Order number, Title, Description, Duration","Edit, Delete, Add Session, Expand/Collapse",Manage course module
+System Admin,Course Detail,/system-admin/course-management/:id,Curriculum,Session Card (within Module),Nested Card,"Order number, Title, Description, Duration, Learning Objectives","Edit, Delete, Add Content",Manage module session
+System Admin,Course Detail,/system-admin/course-management/:id,Curriculum,Content Item (within Session),List Item,"Order number, Title, Type, File/URL, Duration","Edit, Delete, Reorder",Manage session content
+System Admin,Course Detail,/system-admin/course-management/:id,Curriculum,Add Module Dialog,Form Dialog,"Title, Description, Duration, Order","Fill form, Submit, Cancel",Create module under course
+System Admin,Course Detail,/system-admin/course-management/:id,Curriculum,Edit Module Dialog,Form Dialog,Pre-filled module data,"Update fields, Save, Cancel",Modify module details
+System Admin,Course Detail,/system-admin/course-management/:id,Curriculum,Add Session Dialog,Form Dialog,"Title, Description, Duration, Learning Objectives, Order","Fill form, Submit, Cancel",Create session under module
+System Admin,Course Detail,/system-admin/course-management/:id,Curriculum,Edit Session Dialog,Form Dialog,Pre-filled session data,"Update fields, Save, Cancel",Modify session details
+System Admin,Course Detail,/system-admin/course-management/:id,Curriculum,Add Content Dialog,Form Dialog,"Title, Type, File/URL upload, Duration, Description, Order","Select type, Upload/Enter URL, Submit",Add content to session
+System Admin,Course Detail,/system-admin/course-management/:id,Curriculum,Edit Content Dialog,Form Dialog,Pre-filled content data,"Update fields, Change file, Save",Modify content details
+System Admin,Course Detail,/system-admin/course-management/:id,Assignments & Quizzes,Create Assignment Button,Action Button,Button to create assignment,Click to create,Create new assignment
+System Admin,Course Detail,/system-admin/course-management/:id,Assignments & Quizzes,Assignments List,Data Table,"Title, Type, Max Score, Due Date, Submissions","View, Edit, Delete",Manage course assignments
+System Admin,Course Detail,/system-admin/course-management/:id,Assignments & Quizzes,Create Quiz Button,Action Button,Button to create quiz,Click to create,Create new quiz
+System Admin,Course Detail,/system-admin/course-management/:id,Assignments & Quizzes,Quizzes List,Data Table,"Title, Questions, Duration, Max Score, Attempts","View, Edit, Delete",Manage course quizzes
+
+System Admin,Event Management,/system-admin/event-management,Events List,Create Event Button,Action Button,Button to create event,Click to create event,Start new event creation
+System Admin,Event Management,/system-admin/event-management,Events List,"Status Filter, Type Filter",Filter Controls,Filter events by status/type,Filter events,Find specific events
+System Admin,Event Management,/system-admin/event-management,Events List,Events Table/Cards,Data Table/Grid,"Name, Type, Date, Location, Registration Deadline, Max Participants, Applications, Status","View details, Edit, Delete",Manage all events
+System Admin,Event Management,/system-admin/event-management,Applications Overview,Application Statistics,Stats Panel,Overview of all applications,View metrics,Monitor event applications
+System Admin,Event Management,/system-admin/event-management,Applications Overview,Applications Table,Data Table,"Student Name, Institution, Event, Applied Date, Status","Review, Approve, Reject",Review event applications
+
+System Admin,Officer Management,/system-admin/officers,Main View,Add Officer Button,Action Button,Button to add officer,Click to add,Create new officer record
+System Admin,Officer Management,/system-admin/officers,Main View,"Search Bar, Institution Filter",Filter Controls,Search and filter officers,"Search, Filter by institution",Find specific officers
+System Admin,Officer Management,/system-admin/officers,Main View,Officers Table,Data Table,"Photo, Name, Employee ID, Institution, Designation, Department, Email, Phone, Status","View, Edit, Delete",Manage all officers
+
+System Admin,Project Management,/system-admin/project-management,Main View,Projects Overview Statistics,Stats Cards,Project statistics summary,View metrics,Monitor all projects
+System Admin,Project Management,/system-admin/project-management,Main View,"Institution Filter, Status Filter, Category Filter",Filter Controls,Filter projects by criteria,Filter projects,Find specific projects
+System Admin,Project Management,/system-admin/project-management,Main View,Projects Table/Cards,Data Table/Grid,"Title, Institution, Team Members, Guide, Status, Progress, Showcase Status","View details, Mark as showcase, Review",Manage all projects
+
+System Admin,Inventory Management,/system-admin/inventory-management,Main View,Institution Selector,Dropdown,Select institution to view,Select institution,Switch institution view
+System Admin,Inventory Management,/system-admin/inventory-management,Main View,"Total Inventory Value, Item Categories",Summary Cards,Inventory statistics,View metrics,Monitor inventory value
+System Admin,Inventory Management,/system-admin/inventory-management,Main View,Inventory Table,Data Table,"Item Name, Category, Quantity, Condition, Location, Purchase Date, Value","Add item, Update, View details",Manage cross-institution inventory
+
+System Admin,Attendance,/system-admin/officer-attendance,Main View,Institution Filter,Dropdown Selector,Filter by institution,"Select institution, View all",Filter attendance by institution
+System Admin,Attendance,/system-admin/officer-attendance,Main View,Officer Selector,Dropdown Selector,Select officer to view,Select officer,Choose specific officer
+System Admin,Attendance,/system-admin/officer-attendance,Main View,Month Navigation,Navigation Controls,Navigate between months,"Previous month, Next month",Change viewing period
+System Admin,Attendance,/system-admin/officer-attendance,Main View,Export Button,Action Button,Export attendance data,Click to export CSV,Download attendance records
+System Admin,Attendance,/system-admin/officer-attendance,Main View,Summary Statistics Cards,Metric Cards,"Present Days, Absent Days, Leave Days, Attendance Rate",View metrics,Monitor attendance summary
+System Admin,Attendance,/system-admin/officer-attendance,Main View,Monthly Attendance Calendar,Calendar Grid,"Daily attendance status with indicators (✓, ✗, L), hours worked",View calendar,Track monthly attendance
+System Admin,Attendance,/system-admin/officer-attendance,Main View,Officer Details Card,Info Card,"Employee ID, Department, Total Hours, Last Marked Date",View details,Review officer information
+
+System Admin,Leave Approvals,/system-admin/leave-approvals,Main View,Pending Count Badge,Notification Badge,Count of pending applications,View count,Monitor pending requests
+System Admin,Leave Approvals,/system-admin/leave-approvals,Main View,Leave Applications Table,Data Table,"Officer Name, Institution, Leave Type, From Date, To Date, Days, Reason, Status","Approve, Reject",Review leave requests
+System Admin,Leave Approvals,/system-admin/leave-approvals,Main View,Approval Timeline,Timeline Component,Leave approval history,View timeline,Track approval process
+System Admin,Leave Approvals,/system-admin/leave-approvals,Main View,Leave Balance Tracking,Info Panel,Officer leave balances,View balances,Monitor leave allocation
+
+System Admin,Institutional Calendar,/system-admin/institutional-calendar,Academic Year Planner,Calendar View,Calendar Component,"Academic events, semester dates, exam schedules","Add events, Edit events",Plan academic year
+System Admin,Institutional Calendar,/system-admin/institutional-calendar,Holiday Directives,Holiday List,Data Table,"Holiday name, date, type","Add holiday, Edit, Apply to institutions",Manage institutional holidays
+System Admin,Institutional Calendar,/system-admin/institutional-calendar,Institution Events,Event Calendar,Calendar Component,Institution-specific events,"Add event, Edit event",Schedule institution events
+System Admin,Institutional Calendar,/system-admin/institutional-calendar,Audit Calendar,Audit Schedule,Calendar Component,"Scheduled audits, audit history","Schedule audit, View history",Plan compliance audits
+
+System Admin,Reports & Analytics,/system-admin/reports,Main View,Report Categories,Category Selector,Available report types,Select category,Choose report type
+System Admin,Reports & Analytics,/system-admin/reports,Main View,Date Range Selector,Date Picker,Select report period,Pick dates,Define report timeframe
+System Admin,Reports & Analytics,/system-admin/reports,Main View,Export Options,Action Buttons,Export to PDF/Excel,"Export, Download",Get report files
+System Admin,Reports & Analytics,/system-admin/reports,Main View,Report Templates,Template Cards,"Institution Performance, Attendance, Financial, Course Enrollment, Event Participation","Generate, View, Export",Create various reports
+
+Management,Dashboard,/tenant/:slug/management/dashboard,Main View,"Total Faculty Card, Students Card, Active Courses Card, Avg CGPA Card",Statistics Cards,"Faculty count, student count, course count, CGPA average",View metrics,Monitor institution overview
+Management,Dashboard,/tenant/:slug/management/dashboard,Main View,Critical Actions Card,Alert Card,"Pending approvals, assignments, actions needed","View details, Navigate",Track urgent items
+Management,Dashboard,/tenant/:slug/management/dashboard,Main View,Alerts Card,Notification Card,"Announcements, notifications with severity levels",View alerts,Monitor important updates
+Management,Dashboard,/tenant/:slug/management/dashboard,Main View,Department Performance Card,Performance Panel,"Department statistics, teacher/student counts, progress",View performance,Track department metrics
+Management,Dashboard,/tenant/:slug/management/dashboard,Main View,Recent Activities Card,Activity Timeline,"Recent actions, user activities, events",View activity,Monitor recent changes
+Management,Dashboard,/tenant/:slug/management/dashboard,Main View,Quick Actions Buttons,Action Buttons,"Navigate to People, Courses, Inventory, Reports",Click to navigate,Quick section access
+
+Management,Teachers,/tenant/:slug/management/teachers,Main View,Add Teacher Button,Action Button,Button to add teacher,Click to add,Create teacher record
+Management,Teachers,/tenant/:slug/management/teachers,Main View,"Search Bar, Filters",Filter Controls,Search and filter teachers,"Search, Filter",Find specific teachers
+Management,Teachers,/tenant/:slug/management/teachers,Main View,Teachers Table,Data Table,"Photo, Name, Employee ID, Department, Email, Phone, Status","View, Edit, Delete, Assign timetable",Manage institution teachers
+
+Management,Students,/tenant/:slug/management/students,Main View,Statistics Cards,Metric Cards,Student statistics summary,View metrics,Monitor student data
+Management,Students,/tenant/:slug/management/students,Main View,"Add Student, Bulk Upload, Download Template, Export Buttons",Action Buttons,Student management actions,"Add, Upload, Download, Export",Manage student enrollment
+Management,Students,/tenant/:slug/management/students,Main View,"Class, Section, Gender, Status Filters, Search Bar",Filter Controls,Filter student list,"Filter, Search",Find specific students
+Management,Students,/tenant/:slug/management/students,Main View,Students Table,Data Table,"Photo, Name, Roll Number, Class, Gender, DOB, Parent Info, Status","View details, Edit, Delete",Manage all students
+
+Management,Innovation Officers,/tenant/:slug/management/officers,Main View,Officers List,Data Table,"Name, ID, department, courses, status","Add, Edit, Delete, Assign courses",Manage institution officers
+
+Management,Management Team,/tenant/:slug/management/management-team,Main View,Management Staff List,Data Table,"Name, role, responsibilities, contact","Add, Edit, View",Manage management team
+
+Management,Courses & Sessions,/tenant/:slug/management/courses-sessions,Main View,Assigned Courses,Course Grid,Courses assigned to institution,"View, Assign, Manage sessions",Manage institution courses
+
+Management,Inventory & Purchase,/tenant/:slug/management/inventory-purchase,Main View,Institution Inventory,Inventory Panel,Institution-specific inventory,"Add items, View, Approve requests",Manage inventory and purchases
+
+Management,Projects & Certificates,/tenant/:slug/management/projects-certificates,Main View,Student Projects List,Project Grid,Institution student projects,"View, Manage, Issue certificates",Oversee projects and certifications
+
+Management,Events & Activities,/tenant/:slug/management/events,Events,All Events List,Event Cards,Available events for students,"View, Track participation",Monitor institutional events
+Management,Events & Activities,/tenant/:slug/management/events,Our Participation,Participation Table,Student participation data,"View applications, Track status",Manage event participation
+
+Management,Attendance,/tenant/:slug/management/attendance,Student Attendance,Student Attendance Interface,Attendance tracking interface,"View, Mark, Generate reports",Track student attendance
+Management,Attendance,/tenant/:slug/management/attendance,Teacher Attendance,Teacher Attendance Interface,Teacher attendance tracking,"View, Generate reports",Monitor teacher attendance
+Management,Attendance,/tenant/:slug/management/attendance,Officer Attendance,Officer Attendance Interface,Officer attendance tracking,"View, Generate reports",Monitor officer attendance
+Management,Attendance,/tenant/:slug/management/attendance,Payroll Management,Payroll Dashboard,Payroll calculation and management,"Calculate, Approve, Generate payslips",Manage staff payroll
+Management,Attendance,/tenant/:slug/management/attendance,Compliance Reports,Compliance Interface,Regulatory compliance reports,"Generate, Export",Create compliance documentation
+
+Management,Reports,/tenant/:slug/management/reports,Main View,Institution Reports,Report Dashboard,Institution-level reports,"Generate, Export, View",Create institutional reports
+
+Management,Settings,/tenant/:slug/management/settings,Main View,Institution Settings,Settings Panel,Institution configuration,"Edit settings, Save",Configure institution
+
+Officer,Dashboard,/tenant/:slug/officer/dashboard,Main View,Attendance Card,Action Card,"Check-in/out buttons, hours worked, 7-day status","Check-in, Check-out",Track daily attendance
+Officer,Dashboard,/tenant/:slug/officer/dashboard,Main View,Leave Status Card,Info Card,"Leave balance, applied leaves, approval status",View leave info,Monitor leave balance
+Officer,Dashboard,/tenant/:slug/officer/dashboard,Main View,Today's Schedule Card,Schedule Card,"Today's sessions with time, location, class",View schedule,See daily sessions
+Officer,Dashboard,/tenant/:slug/officer/dashboard,Main View,Upcoming Sessions Card,Preview Card,Next 3 sessions with details,View upcoming,Plan ahead
+Officer,Dashboard,/tenant/:slug/officer/dashboard,Main View,Pending Event Applications,Action Card,Student applications to review,"Review, Approve/Reject",Process applications
+
+Officer,Course Management,/tenant/:slug/officer/course-management,Main View,Assigned Courses Grid,Course Cards,"Course name, modules, sessions, students, progress","View content, View students",Access teaching materials
+
+Officer,Course Content Viewer,/tenant/:slug/officer/course-content/:id,Main View,Module Navigation Sidebar,Navigation Panel,"Module → Session → Content hierarchy with progress",Navigate structure,Browse course content
+Officer,Course Content Viewer,/tenant/:slug/officer/course-content/:id,Main View,Content Display Area,Content Viewer,"Video player, PDF viewer, article display","View, Play, Read",Consume content
+Officer,Course Content Viewer,/tenant/:slug/officer/course-content/:id,Main View,"Navigation Buttons, Mark Complete Button",Action Buttons,"Previous, Next, Mark Complete buttons","Navigate, Mark complete",Control content flow
+Officer,Course Content Viewer,/tenant/:slug/officer/course-content/:id,Main View,Student Engagement Panel,Engagement Widget,"Students viewing, completion statistics",View engagement,Monitor student activity
+
+Officer,My Timetable,/tenant/:slug/officer/sessions,Main View,Calendar View,Calendar Component,Weekly session schedule,View schedule,See weekly timetable
+Officer,My Timetable,/tenant/:slug/officer/sessions,Main View,Session Cards,Session Cards,"Time, class, course, room, type","Mark attendance, Add notes, View details",Manage sessions
+
+Officer,My Profile,/tenant/:slug/officer/profile,Main View,Profile Information Card,Profile Panel,"Photo, personal info, contact, qualifications, courses, metrics","View, Edit profile, Change password",Manage personal profile
+
+Officer,Projects,/tenant/:slug/officer/projects,Main View,Projects Under Guidance,Project Grid,"Projects, status, teams, progress, milestones","View, Update status, Review",Guide student projects
+
+Officer,Lab Inventory,/tenant/:slug/officer/inventory,My Inventory,Lab Items List,Inventory Table,"Items, details, condition",Update condition,Manage lab items
+Officer,Lab Inventory,/tenant/:slug/officer/inventory,Purchase Requests,Purchase Requests Panel,Request list and form,"Create request, View status, Track approval",Request lab equipment
+
+Officer,Class Attendance,/tenant/:slug/officer/attendance,Main View,"Class Selector, Session Selector",Dropdown Controls,Select class and session,Select session,Choose attendance context
+Officer,Class Attendance,/tenant/:slug/officer/attendance,Main View,Student List with Checkboxes,Attendance Form,Students with attendance checkboxes,"Mark present/absent, Save",Record session attendance
+Officer,Class Attendance,/tenant/:slug/officer/attendance,Main View,Attendance Calendar,Calendar View,Historical attendance records,View history,Review past attendance
+Officer,Class Attendance,/tenant/:slug/officer/attendance,Main View,Statistics Panel,Stats Cards,Attendance statistics,View stats,Monitor attendance trends
+
+Officer,Leave Management,/tenant/:slug/officer/leave-management,Main View,Apply for Leave Button,Action Button,Button to apply for leave,Click to apply,Create leave request
+Officer,Leave Management,/tenant/:slug/officer/leave-management,Main View,Leave Balance Display,Info Card,Available leave balance,View balance,Check leave quota
+Officer,Leave Management,/tenant/:slug/officer/leave-management,Main View,Leave Applications Table,Data Table,"Type, dates, days, status","View, Cancel",Manage leave applications
+Officer,Leave Management,/tenant/:slug/officer/leave-management,Main View,Leave Approval Timeline,Timeline Component,Approval progress,View timeline,Track approval status
+
+Officer,Events & Activities,/tenant/:slug/officer/events,Events Overview,Upcoming Events List,Event Cards,"Event details, dates, registration",View events,Browse available events
+Officer,Events & Activities,/tenant/:slug/officer/events,Application Review,Student Applications Table,Data Table,"Student, event, date, status","Approve, Reject, Add comments",Review student applications
+
+Teacher,Dashboard,/tenant/:slug/teacher/dashboard,Main View,Statistics Cards,Metric Cards,"My Courses, Total Students, Classes Today, Pending Evaluations",View metrics,Monitor teaching overview
+Teacher,Dashboard,/tenant/:slug/teacher/dashboard,Main View,Quick Actions Buttons,Action Buttons,"Mark Attendance, View Schedule, Upload Materials",Quick actions,Fast access to key functions
+Teacher,Dashboard,/tenant/:slug/teacher/dashboard,Main View,Today's Classes Card,Schedule Card,"Classes scheduled today with time, course, room",View schedule,See daily classes
+Teacher,Dashboard,/tenant/:slug/teacher/dashboard,Main View,Recent Activity Feed,Activity Timeline,"Submissions, grade updates, material uploads",View activity,Monitor recent changes
+
+Teacher,My Courses,/tenant/:slug/teacher/courses,Main View,Summary Cards,Metric Cards,"Total Courses, Total Students, Total Credits",View metrics,See course overview
+Teacher,My Courses,/tenant/:slug/teacher/courses,Main View,Courses Grid,Course Cards,"Code, name, department, semester, credits, students, schedule, room","View grades, View attendance, View materials",Access course sections
+
+Teacher,Grades,/tenant/:slug/teacher/grades,Main View,Course Selector,Dropdown,Select course to grade,Select course,Choose grading context
+Teacher,Grades,/tenant/:slug/teacher/grades,Main View,"Assessment Type Tabs (Assignments, Quizzes, Exams)",Tab Controls,Different assessment types,Switch assessment type,Change grading category
+Teacher,Grades,/tenant/:slug/teacher/grades,Main View,Student Grades Table,Data Table,"Student names, scores, grades","Enter grades, Update grades",Record student performance
+Teacher,Grades,/tenant/:slug/teacher/grades,Main View,Grade Distribution Chart,Chart Component,Visual grade distribution,"View distribution, Export",Analyze grade patterns
+
+Teacher,Attendance,/tenant/:slug/teacher/attendance,Main View,Course Selector,Dropdown,Select course,Select course,Choose attendance context
+Teacher,Attendance,/tenant/:slug/teacher/attendance,Main View,Date Selector,Date Picker,Select date,Pick date,Choose attendance date
+Teacher,Attendance,/tenant/:slug/teacher/attendance,Main View,Calendar View,Calendar Component,Monthly attendance view,View calendar,See attendance patterns
+Teacher,Attendance,/tenant/:slug/teacher/attendance,Main View,Student List with Status,Attendance Form,Students with attendance status,"Mark present/absent, Save",Record class attendance
+Teacher,Attendance,/tenant/:slug/teacher/attendance,Main View,Attendance Summary,Stats Panel,Attendance statistics,"View summary, Export",Analyze attendance data
+
+Teacher,Schedule,/tenant/:slug/teacher/schedule,Main View,Weekly Calendar,Calendar Component,"Weekly class schedule with time slots, rooms",View schedule,See weekly timetable
+
+Teacher,Materials,/tenant/:slug/teacher/materials,Main View,Course Selector,Dropdown,Select course,Select course,Choose material context
+Teacher,Materials,/tenant/:slug/teacher/materials,Main View,Upload Materials Button,Action Button,Upload button,Click to upload,Add new materials
+Teacher,Materials,/tenant/:slug/teacher/materials,Main View,Materials List,Data Table,"Title, type, upload date, size","Download, Delete",Manage course materials
+
+Student,Dashboard,/tenant/:slug/student/dashboard,Main View,Statistics Cards,Metric Cards,"Enrolled Courses, Active Projects, Certificates Earned, Leaderboard Rank",View metrics,Monitor learning overview
+Student,Dashboard,/tenant/:slug/student/dashboard,Main View,Progress Overview Panel,Progress Panel,"Course completion, GPA, credits earned",View progress,Track academic progress
+Student,Dashboard,/tenant/:slug/student/dashboard,Main View,Upcoming Deadlines Card,Deadline List,"Assignment due dates, quiz schedules, project milestones",View deadlines,Track due dates
+Student,Dashboard,/tenant/:slug/student/dashboard,Main View,Recent Activity Feed,Activity Timeline,"Course progress, grades received, announcements",View activity,Monitor recent updates
+Student,Dashboard,/tenant/:slug/student/dashboard,Main View,Leaderboard Preview,Ranking Card,"Top 3 students, your rank, points, badges",View ranking,See gamification status
+
+Student,My Courses,/tenant/:slug/student/courses,My Enrolled Courses,Enrolled Course Cards,Course Cards,"Thumbnail, name, code, category, progress bar, percentage, last activity","Continue learning, View details",Access enrolled courses
+Student,My Courses,/tenant/:slug/student/courses,Browse Courses,Search Bar,Search Input,Search course catalog,Search courses,Find courses to enroll
+Student,My Courses,/tenant/:slug/student/courses,Browse Courses,Available Course Cards,Course Cards,"Thumbnail, name, code, category, difficulty, duration, description",Enroll in course,Join new courses
+
+Student,Course Detail,/tenant/:slug/student/courses/:id,Overview,Course Description Panel,Info Panel,"Description, instructor, duration, prerequisites, objectives",View course info,Review course details
+Student,Course Detail,/tenant/:slug/student/courses/:id,Content,Module Cards,Accordion Cards,Module title and description,Expand module,View module content
+Student,Course Detail,/tenant/:slug/student/courses/:id,Content,Session Cards (within Modules),Nested Cards,"Session title, description, duration, objectives",Expand session,View session content
+Student,Course Detail,/tenant/:slug/student/courses/:id,Content,Content Items (within Sessions),List Items,"Icon, title, completion checkmark",Click to view content,Open content viewer
+Student,Course Detail,/tenant/:slug/student/courses/:id,Progress,Progress Panel,Progress Display,"Completion percentage, completed modules/sessions, quiz scores, assignment submissions",View progress,Track course completion
+
+Student,Content Viewer,Dialog/Modal,Content View,Content Display Area,Media Viewer,"Video player, PDF viewer, article text","View, Play, Read",Consume learning content
+Student,Content Viewer,Dialog/Modal,Content View,"Previous/Next Buttons, Mark Complete Button",Action Buttons,Navigation and completion controls,"Navigate, Mark complete, Close",Control content viewing
+
+Student,My Projects,/tenant/:slug/student/projects,Main View,Projects List,Project Cards,"Project details, status, team, progress, milestones","View details, Update progress, Submit",Manage projects
+
+Student,Events & Activities,/tenant/:slug/student/events,Available Events,Event Cards,Event Cards,"Event details, registration countdown",Apply for event,Register for events
+Student,Events & Activities,/tenant/:slug/student/events,My Applications,Applications Table,Data Table,"Event name, applied date, status","View status, Withdraw",Track applications
+
+Student,Timetable,/tenant/:slug/student/timetable,Main View,Weekly Calendar,Calendar Component,"Class schedule, time slots, course names, rooms, instructors",View schedule,See weekly timetable
+
+Student,Certificates,/tenant/:slug/student/certificates,Main View,Certificates Grid,Certificate Cards,"Certificate preview, course name, issue date, ID","View, Download, Share",Access earned certificates
+
+Student,Gamification,/tenant/:slug/student/gamification,Main View,Gamification Dashboard,Gamification Panel,"Points balance, badges earned, achievements, leaderboard, milestones","View points, View badges, Compare",Track learning gamification
+
+Student,Resume,/tenant/:slug/student/resume,Main View,Resume Builder,Form Interface,"Personal info, education, skills, projects, certifications, experience sections","Add sections, Edit, Preview, Export to PDF",Create professional resume

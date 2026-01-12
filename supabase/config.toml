@@ -1,0 +1,40 @@
+project_id = "ftadmxcxzhptngqbbqpk"
+
+[functions.seed-admin]
+verify_jwt = false
+
+[functions.reset-institution-admin-password]
+verify_jwt = false
+
+[functions.create-institution-admin]
+verify_jwt = false
+
+[functions.create-student-user]
+verify_jwt = false
+
+[functions.create-officer-user]
+verify_jwt = false
+
+[functions.admin-user-management]
+verify_jwt = false
+
+[functions.check-task-reminders]
+verify_jwt = false
+
+[functions.set-user-password]
+verify_jwt = false
+
+[functions.delete-institution-cascade]
+verify_jwt = false
+
+[functions.delete-class-cascade]
+verify_jwt = false
+
+[functions.download-newsletter]
+verify_jwt = false
+
+[functions.issue-completion-certificates]
+verify_jwt = false
+
+[functions.ask-metova]
+verify_jwt = false
