@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,9 +6,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { getOfficerByEmail } from '@/data/mockOfficerData';
+import { useOfficerByUserId } from '@/hooks/useOfficerProfile';
 import { OfficerMonthlyAttendanceCalendar } from '@/components/officer/OfficerMonthlyAttendanceCalendar';
 import { OfficerDailyAttendanceDetails } from '@/components/officer/OfficerDailyAttendanceDetails';
+import { Loader2 } from 'lucide-react';
 import {
   User,
   Mail,
@@ -30,18 +31,20 @@ import {
 export default function Profile() {
   const { user } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState<string>('');
-
-  // Get officer data
-  const officer = user?.email ? getOfficerByEmail(user.email) : null;
+  
+  // Get officer data from database
+  const { data: officer, isLoading, error } = useOfficerByUserId(user?.id);
 
   // Get current month
   const currentDate = new Date();
   const currentMonthYear = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
   
-  // Initialize selected month if empty
-  if (!selectedMonth && officer) {
-    setSelectedMonth(currentMonthYear);
-  }
+  // Initialize selected month
+  useEffect(() => {
+    if (!selectedMonth && officer) {
+      setSelectedMonth(currentMonthYear);
+    }
+  }, [officer, selectedMonth, currentMonthYear]);
 
   const getInitials = (name: string) => {
     return name
@@ -51,6 +54,22 @@ export default function Profile() {
       .toUpperCase()
       .slice(0, 2);
   };
+
+  // Safe array accessors for JSONB fields
+  const qualifications = Array.isArray((officer as any)?.qualifications) ? (officer as any).qualifications : [];
+  const certifications = Array.isArray((officer as any)?.certifications) ? (officer as any).certifications : [];
+  const skills = Array.isArray((officer as any)?.skills) ? (officer as any).skills : [];
+  const assignedInstitutions = Array.isArray(officer?.assigned_institutions) ? officer.assigned_institutions : [];
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
 
   if (!officer) {
     return (
@@ -77,46 +96,54 @@ export default function Profile() {
             <div className="flex flex-col md:flex-row gap-6 items-start">
               {/* Avatar */}
               <Avatar className="h-24 w-24">
-                <AvatarImage src={officer.profile_photo_url} alt={officer.name} />
+                <AvatarImage src={officer.profile_photo_url || undefined} alt={officer.full_name} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                  {getInitials(officer.name)}
+                  {getInitials(officer.full_name)}
                 </AvatarFallback>
               </Avatar>
 
               {/* Main Info */}
               <div className="flex-1 space-y-3">
                 <div>
-                  <h2 className="text-2xl font-bold">{officer.name}</h2>
-                  <p className="text-muted-foreground">{officer.employee_id}</p>
+                  <h2 className="text-2xl font-bold">{officer.full_name}</h2>
+                  <p className="text-muted-foreground">{officer.employee_id || 'No Employee ID'}</p>
                 </div>
 
                 {/* Badges */}
                 <div className="flex flex-wrap gap-2">
                   <Badge variant={officer.status === 'active' ? 'default' : 'secondary'}>
-                    {officer.status === 'active' ? 'Active' : 'On Leave'}
+                    {officer.status === 'active' ? 'Active' : officer.status}
                   </Badge>
-                  <Badge variant="outline">{officer.employment_type.replace('_', ' ').toUpperCase()}</Badge>
-                  <Badge variant="outline" className="gap-1">
-                    <Building2 className="h-3 w-3" />
-                    {officer.department}
-                  </Badge>
+                  {(officer as any).employment_type && (
+                    <Badge variant="outline">{(officer as any).employment_type.replace('_', ' ').toUpperCase()}</Badge>
+                  )}
+                  {officer.department && (
+                    <Badge variant="outline" className="gap-1">
+                      <Building2 className="h-3 w-3" />
+                      {officer.department}
+                    </Badge>
+                  )}
                 </div>
 
                 {/* Quick Stats */}
                 <div className="flex flex-wrap gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Joined:</span>
-                    <span className="font-medium">{new Date(officer.join_date).toLocaleDateString()}</span>
-                  </div>
+                  {(officer as any).join_date && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Joined:</span>
+                      <span className="font-medium">{new Date((officer as any).join_date).toLocaleDateString()}</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{officer.email}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{officer.phone}</span>
-                  </div>
+                  {(officer as any).phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{(officer as any).phone}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -134,17 +161,21 @@ export default function Profile() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Date of Birth</p>
-                <p className="font-medium">{new Date(officer.date_of_birth).toLocaleDateString()}</p>
-              </div>
-              <Separator />
+              {(officer as any).date_of_birth && (
+                <>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Date of Birth</p>
+                    <p className="font-medium">{new Date((officer as any).date_of_birth).toLocaleDateString()}</p>
+                  </div>
+                  <Separator />
+                </>
+              )}
               <div>
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
                   Address
                 </p>
-                <p className="font-medium">{officer.address}</p>
+                <p className="font-medium">{(officer as any).address || 'Not specified'}</p>
               </div>
             </CardContent>
           </Card>
@@ -160,11 +191,15 @@ export default function Profile() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Qualifications</p>
-                <ul className="space-y-1">
-                  {officer.qualifications.map((qual, idx) => (
-                    <li key={idx} className="text-sm font-medium">• {qual}</li>
-                  ))}
-                </ul>
+                {qualifications.length > 0 ? (
+                  <ul className="space-y-1">
+                    {qualifications.map((qual: string, idx: number) => (
+                      <li key={idx} className="text-sm font-medium">• {qual}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No qualifications listed</p>
+                )}
               </div>
               <Separator />
               <div>
@@ -172,13 +207,17 @@ export default function Profile() {
                   <Award className="h-4 w-4" />
                   Certifications
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {officer.certifications.map((cert, idx) => (
-                    <Badge key={idx} variant="secondary" className="text-xs">
-                      {cert}
-                    </Badge>
-                  ))}
-                </div>
+                {certifications.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {certifications.map((cert: string, idx: number) => (
+                      <Badge key={idx} variant="secondary" className="text-xs">
+                        {cert}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No certifications listed</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -195,15 +234,15 @@ export default function Profile() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Employee ID</p>
-                  <p className="font-medium">{officer.employee_id}</p>
+                  <p className="font-medium">{officer.employee_id || 'Not assigned'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Department</p>
-                  <p className="font-medium">{officer.department}</p>
+                  <p className="font-medium">{officer.department || 'Not assigned'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Employment Type</p>
-                  <p className="font-medium capitalize">{officer.employment_type.replace('_', ' ')}</p>
+                  <p className="text-sm text-muted-foreground">Designation</p>
+                  <p className="font-medium capitalize">{officer.designation || 'Not specified'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
@@ -218,13 +257,17 @@ export default function Profile() {
                   <Code className="h-4 w-4" />
                   Skills
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {officer.skills.map((skill, idx) => (
-                    <Badge key={idx} variant="outline" className="text-xs">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
+                {skills.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {skills.map((skill: string, idx: number) => (
+                      <Badge key={idx} variant="outline" className="text-xs">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No skills listed</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -246,7 +289,7 @@ export default function Profile() {
               
               <OfficerDailyAttendanceDetails
                 officerId={officer.id}
-                officerName={officer.name}
+                officerName={officer.full_name}
                 month={selectedMonth}
               />
             </>
@@ -261,13 +304,17 @@ export default function Profile() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {officer.assigned_institutions.map((inst, idx) => (
-                  <Badge key={idx} variant="secondary" className="text-sm capitalize">
-                    {inst}
-                  </Badge>
-                ))}
-              </div>
+              {assignedInstitutions.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {assignedInstitutions.map((inst, idx) => (
+                    <Badge key={idx} variant="secondary" className="text-sm">
+                      {inst}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No institutions assigned</p>
+              )}
             </CardContent>
           </Card>
 
