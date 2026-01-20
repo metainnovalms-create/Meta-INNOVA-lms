@@ -26,7 +26,7 @@ import {
   UserCheck,
   IndianRupee,
 } from 'lucide-react';
-import { OfficerDetails, OfficerDocument, OfficerActivityLog } from '@/services/systemadmin.service';
+import { OfficerDetails, OfficerDocument } from '@/services/systemadmin.service';
 import DocumentUploadDialog from '@/components/officer/DocumentUploadDialog';
 import EditOfficerDialog from '@/components/officer/EditOfficerDialog';
 import DocumentCard from '@/components/officer/DocumentCard';
@@ -46,33 +46,6 @@ interface OfficerLeaveBalance {
   annual_leave: number;
 }
 
-// Mock activity log
-const mockActivityLog: OfficerActivityLog[] = [
-  {
-    id: '1',
-    officer_id: '1',
-    action_type: 'profile_update',
-    action_description: 'Updated contact information',
-    performed_by: 'Admin',
-    performed_at: '2024-01-15T10:30:00Z',
-  },
-  {
-    id: '2',
-    officer_id: '1',
-    action_type: 'assignment',
-    action_description: 'Assigned to River College',
-    performed_by: 'System Admin',
-    performed_at: '2024-01-10T14:20:00Z',
-  },
-  {
-    id: '3',
-    officer_id: '1',
-    action_type: 'document_upload',
-    action_description: 'Uploaded MBA Certificate',
-    performed_by: 'John Smith',
-    performed_at: '2024-01-05T09:15:00Z',
-  },
-];
 
 // Convert database Officer to OfficerDetails format
 function mapOfficerToDetails(officer: Officer): OfficerDetails {
@@ -149,7 +122,7 @@ export default function OfficerDetail() {
   
   const [officer, setOfficer] = useState<OfficerDetails | null>(null);
   const [documents, setDocuments] = useState<OfficerDocument[]>([]);
-  const [activityLog, setActivityLog] = useState<OfficerActivityLog[]>([]);
+  
   const [activeTab, setActiveTab] = useState('profile');
   
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -193,7 +166,7 @@ export default function OfficerDetail() {
   useEffect(() => {
     if (officerData) {
       setOfficer(mapOfficerToDetails(officerData));
-      setActivityLog(mockActivityLog);
+      
       
       // Get leave balance from database fields
       setLeaveBalance(getOfficerLeaveBalance(officerData));
@@ -580,12 +553,11 @@ export default function OfficerDetail() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="employment">Employment</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="assignments">Assignments</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
@@ -949,36 +921,6 @@ export default function OfficerDetail() {
             )}
           </TabsContent>
 
-          {/* Activity Tab */}
-          <TabsContent value="activity" className="space-y-4">
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Recent Activity
-                </h3>
-                {activityLog.length > 0 ? (
-                  <div className="space-y-4">
-                    {activityLog.map((log) => (
-                      <div key={log.id} className="flex items-start gap-4 border-b pb-4 last:border-0">
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                          <FileText className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{log.action_description}</p>
-                          <p className="text-xs text-muted-foreground">
-                            by {log.performed_by} • {formatDate(log.performed_at)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-4">No activity recorded</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
 
         {/* Edit Profile Dialog */}
