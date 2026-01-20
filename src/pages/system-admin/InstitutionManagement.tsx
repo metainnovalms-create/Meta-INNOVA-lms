@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInstitutions, InstitutionFormData } from '@/hooks/useInstitutions';
+import { useAllInstitutionsAnalytics } from '@/hooks/useAllInstitutionsAnalytics';
 import { Layout } from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,6 +51,7 @@ export default function InstitutionManagement() {
     isCreating,
     isDeleting
   } = useInstitutions();
+  const { data: analyticsData, isLoading: isAnalyticsLoading } = useAllInstitutionsAnalytics();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -1055,16 +1057,32 @@ export default function InstitutionManagement() {
 
           {/* Tab 3: Performance Analytics */}
           <TabsContent value="analytics" className="space-y-6">
-            {/* Analytics will be populated from real data - placeholder for now */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance Analytics</CardTitle>
-                <CardDescription>Institution engagement data will be displayed here</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Analytics dashboard coming soon. This will display real engagement data from the database.</p>
-              </CardContent>
-            </Card>
+            {isAnalyticsLoading ? (
+              <Card>
+                <CardContent className="py-12 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-muted-foreground">Loading analytics...</span>
+                </CardContent>
+              </Card>
+            ) : analyticsData && analyticsData.length > 0 ? (
+              <>
+                <EngagementDashboard data={analyticsData} />
+                <AtRiskInstitutions 
+                  data={analyticsData.filter(d => d.risk_level === 'high' || d.risk_level === 'medium')} 
+                />
+                <InstitutionComparisonTable data={analyticsData} />
+              </>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Performance Analytics</CardTitle>
+                  <CardDescription>No analytics data available</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Add institutions and activity data to see performance analytics here.</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
 
