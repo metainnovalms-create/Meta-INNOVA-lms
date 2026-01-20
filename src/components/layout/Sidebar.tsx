@@ -419,19 +419,12 @@ export function Sidebar() {
       {/* Logo Section */}
       <div className="flex h-16 items-center justify-between border-b border-meta-dark-lighter px-4">
         {!collapsed ? (
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full overflow-hidden">
-              <img 
-                src={branding.logo_collapsed_url || logoImage} 
-                alt="Logo" 
-                className="h-full w-full object-contain" 
-              />
-            </div>
+          <div className="flex items-center gap-2 w-full">
             {branding.logo_expanded_url ? (
               <img 
                 src={branding.logo_expanded_url} 
                 alt="Site Logo" 
-                className="h-8 max-w-[120px] object-contain" 
+                className="h-8 max-w-[140px] object-contain" 
               />
             ) : (
               <span className="text-xl font-bold">Meta-INNOVA</span>
