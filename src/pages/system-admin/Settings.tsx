@@ -1,17 +1,13 @@
 import { Layout } from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Shield, Mail, Settings as SettingsIcon, Save, FileText, ClipboardList, Bot } from 'lucide-react';
+import { Shield, Mail, Settings as SettingsIcon, FileText, ClipboardList, Bot } from 'lucide-react';
 import { AccountSettingsSection } from '@/components/settings/AccountSettingsSection';
 import { InvoiceSettingsTab } from '@/components/settings/InvoiceSettingsTab';
 import { ReportSettingsTab } from '@/components/settings/ReportSettingsTab';
 import { AISettingsTab } from '@/components/settings/AISettingsTab';
 import { SystemPreferencesTab } from '@/components/settings/SystemPreferencesTab';
 import { ResendSettingsCard } from '@/components/settings/ResendSettingsCard';
+import { EmailTemplateSettingsCard } from '@/components/settings/EmailTemplateSettingsCard';
 
 const EmailConfigurationTab = () => {
   return (
@@ -19,69 +15,8 @@ const EmailConfigurationTab = () => {
       {/* Resend Settings */}
       <ResendSettingsCard />
       
-      <Card>
-        <CardHeader>
-          <CardTitle>SMTP Configuration</CardTitle>
-          <CardDescription>Configure email server settings for notifications</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="smtp-host">SMTP Host</Label>
-              <Input id="smtp-host" placeholder="smtp.gmail.com" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="smtp-port">SMTP Port</Label>
-              <Input id="smtp-port" placeholder="587" />
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="smtp-user">SMTP Username</Label>
-              <Input id="smtp-user" placeholder="notifications@metainnova.com" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="smtp-password">SMTP Password</Label>
-              <Input id="smtp-password" type="password" placeholder="••••••••" />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Use TLS</Label>
-              <p className="text-sm text-muted-foreground">Enable TLS encryption for email</p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-
-          <Button>
-            <Save className="mr-2 h-4 w-4" />
-            Save SMTP Settings
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Email Templates</CardTitle>
-          <CardDescription>Configure email notification templates</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="from-name">From Name</Label>
-            <Input id="from-name" defaultValue="Meta-INNOVA Platform" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="from-email">From Email</Label>
-            <Input id="from-email" defaultValue="noreply@metainnova.com" />
-          </div>
-          <Button variant="outline">
-            <Mail className="mr-2 h-4 w-4" />
-            Test Email Configuration
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Email Template Settings */}
+      <EmailTemplateSettingsCard />
     </div>
   );
 };
