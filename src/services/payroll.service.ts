@@ -264,46 +264,43 @@ export const getApprovedLeaveDays = async (
   return { leaveDays: leaveDates.size, leaveDates };
 };
 
-// Get holidays (company-wide or institution-specific)
+// Get holidays (company-wide or institution-specific) from calendar_day_types
 export const getHolidaysInMonth = async (
   month: number, 
   year: number, 
   institutionId?: string
 ): Promise<Set<string>> => {
   const holidayDates = new Set<string>();
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const endDate = formatDateLocal(new Date(year, month, 0));
   
-  // Fetch company holidays
-  const { data: companyHolidays } = await supabase
-    .from('company_holidays')
-    .select('date')
-    .eq('year', year);
-  
-  if (companyHolidays) {
-    for (const h of companyHolidays) {
-      const holidayDate = new Date(h.date);
-      const hMonth = holidayDate.getMonth() + 1;
-      if (hMonth === month) {
-        holidayDates.add(formatDateLocal(holidayDate));
-      }
-    }
-  }
-  
-  // If institution is specified, also fetch institution-specific holidays
   if (institutionId) {
-    const { data: institutionHolidays } = await supabase
-      .from('institution_holidays')
+    // For officers: Use institution calendar_day_types
+    const { data: holidays } = await supabase
+      .from('calendar_day_types')
       .select('date')
+      .eq('calendar_type', 'institution')
       .eq('institution_id', institutionId)
-      .eq('year', year);
+      .eq('day_type', 'holiday')
+      .gte('date', startDate)
+      .lte('date', endDate);
     
-    if (institutionHolidays) {
-      for (const h of institutionHolidays) {
-        const holidayDate = new Date(h.date);
-        const hMonth = holidayDate.getMonth() + 1;
-        if (hMonth === month) {
-          holidayDates.add(formatDateLocal(holidayDate));
-        }
-      }
+    if (holidays) {
+      holidays.forEach(h => holidayDates.add(h.date));
+    }
+  } else {
+    // For staff: Use company calendar_day_types
+    const { data: holidays } = await supabase
+      .from('calendar_day_types')
+      .select('date')
+      .eq('calendar_type', 'company')
+      .is('institution_id', null)
+      .eq('day_type', 'holiday')
+      .gte('date', startDate)
+      .lte('date', endDate);
+    
+    if (holidays) {
+      holidays.forEach(h => holidayDates.add(h.date));
     }
   }
   
