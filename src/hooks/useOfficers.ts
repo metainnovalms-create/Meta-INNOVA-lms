@@ -169,88 +169,37 @@ export function useDeleteOfficer() {
 }
 
 /**
- * Cascade delete an officer and all related data:
+ * Cascade delete an officer and all related data via edge function:
  * - Documents from storage and database
  * - Institution assignments
  * - Attendance records
  * - Class access grants
+ * - Auth user, profiles, and user_roles
  */
 export function useDeleteOfficerCascade() {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (officerId: string) => {
-      // 1. Get all documents for this officer to delete from storage
-      const { data: docs } = await supabase
-        .from('officer_documents')
-        .select('file_url')
-        .eq('officer_id', officerId);
+      console.log('[Officers] Deleting officer via edge function:', officerId);
       
-      // 2. Delete files from storage bucket
-      if (docs && docs.length > 0) {
-        const filePaths: string[] = [];
-        for (const d of docs) {
-          try {
-            const url = new URL(d.file_url);
-            const pathMatch = url.pathname.match(/\/officer-documents\/(.+)/);
-            if (pathMatch) {
-              filePaths.push(decodeURIComponent(pathMatch[1]));
-            }
-          } catch {
-            // Skip invalid URLs
-          }
-        }
-        
-        if (filePaths.length > 0) {
-          await supabase.storage
-            .from('officer-documents')
-            .remove(filePaths);
-        }
+      // Call edge function for proper cascade deletion (includes auth user, profiles, user_roles)
+      const { data, error } = await supabase.functions.invoke('delete-officer-user', {
+        body: { officer_id: officerId },
+      });
+
+      if (error) {
+        console.error('[Officers] Edge function error:', error);
+        throw new Error(error.message || 'Failed to delete officer');
+      }
+
+      if (data?.error) {
+        console.error('[Officers] Delete error:', data.error);
+        throw new Error(data.error);
       }
       
-      // Delete from related tables - ignore errors for tables that may not have data
-      // 3. Delete from officer_documents
-      await supabase.from('officer_documents').delete().eq('officer_id', officerId);
-      
-      // 4. Delete from officer_institution_assignments
-      await supabase.from('officer_institution_assignments').delete().eq('officer_id', officerId);
-      
-      // 5. Delete from officer_attendance
-      await supabase.from('officer_attendance').delete().eq('officer_id', officerId);
-      
-      // 6. Delete from officer_class_access_grants (both granting and receiving)
-      // Using explicit void return to avoid type instantiation issues
-      const deleteAccessGrants = async (column: string, id: string) => {
-        const query = supabase.from('officer_class_access_grants').delete();
-        await (query as any).eq(column, id);
-      };
-      await deleteAccessGrants('granting_officer_id', officerId);
-      await deleteAccessGrants('receiving_officer_id', officerId);
-      
-      // 7. Delete from purchase_requests (officer's purchase requests)
-      await supabase.from('purchase_requests').delete().eq('officer_id', officerId);
-      
-      // 8. Delete from daily_work_logs
-      await supabase.from('daily_work_logs').delete().eq('officer_id', officerId);
-      
-      // 9. Update class_session_attendance to remove officer reference (preserve records)
-      await supabase
-        .from('class_session_attendance')
-        .update({ officer_id: null, completed_by: null })
-        .eq('officer_id', officerId);
-      
-      await supabase
-        .from('class_session_attendance')
-        .update({ completed_by: null })
-        .eq('completed_by', officerId);
-      
-      // Finally delete from officers table
-      const { error } = await supabase
-        .from('officers')
-        .delete()
-        .eq('id', officerId);
-      
-      if (error) throw error;
+      console.log('[Officers] Deleted successfully:', data);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['officers'] });
