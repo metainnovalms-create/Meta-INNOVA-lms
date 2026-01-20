@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { OfficerDetails } from '@/services/systemadmin.service';
-import { Calculator } from 'lucide-react';
+import { Calculator, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Leave balance type matching OfficerDetail component
@@ -34,6 +35,9 @@ export default function EditOfficerDialog({
   onSaveSuccess,
 }: EditOfficerDialogProps) {
   const [formData, setFormData] = useState<Partial<OfficerDetails> & { casual_leave?: number; sick_leave?: number }>({});
+  const [newSkill, setNewSkill] = useState('');
+  const [newQualification, setNewQualification] = useState('');
+  const [newCertification, setNewCertification] = useState('');
 
   useEffect(() => {
     if (officer) {
@@ -72,9 +76,63 @@ export default function EditOfficerDialog({
         bank_account_number: officer.bank_account_number,
         bank_ifsc: officer.bank_ifsc,
         bank_branch: officer.bank_branch,
+        skills: officer.skills || [],
+        qualifications: officer.qualifications || [],
+        certifications: officer.certifications || [],
       });
     }
   }, [officer, leaveBalance]);
+
+  const addSkill = () => {
+    if (newSkill.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        skills: [...(prev.skills || []), newSkill.trim()]
+      }));
+      setNewSkill('');
+    }
+  };
+
+  const removeSkill = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: (prev.skills || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const addQualification = () => {
+    if (newQualification.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        qualifications: [...(prev.qualifications || []), newQualification.trim()]
+      }));
+      setNewQualification('');
+    }
+  };
+
+  const removeQualification = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      qualifications: (prev.qualifications || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const addCertification = () => {
+    if (newCertification.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        certifications: [...(prev.certifications || []), newCertification.trim()]
+      }));
+      setNewCertification('');
+    }
+  };
+
+  const removeCertification = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      certifications: (prev.certifications || []).filter((_, i) => i !== index)
+    }));
+  };
 
   const handleChange = (field: keyof OfficerDetails | 'casual_leave' | 'sick_leave', value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -599,6 +657,93 @@ export default function EditOfficerDialog({
                   />
                   <Label htmlFor="pt_applicable" className="font-normal">PT Applicable</Label>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Skills & Qualifications Section */}
+          <Separator />
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground">Skills & Qualifications</h3>
+            
+            {/* Skills */}
+            <div>
+              <Label>Skills</Label>
+              <div className="flex flex-wrap gap-2 mb-2 min-h-[32px]">
+                {(formData.skills || []).map((skill, index) => (
+                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                    {skill}
+                    <X 
+                      className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                      onClick={() => removeSkill(index)} 
+                    />
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="Add a skill (e.g., Python, Leadership)" 
+                  value={newSkill} 
+                  onChange={(e) => setNewSkill(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+                />
+                <Button type="button" size="sm" variant="outline" onClick={addSkill}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Qualifications */}
+            <div>
+              <Label>Educational Qualifications</Label>
+              <div className="flex flex-wrap gap-2 mb-2 min-h-[32px]">
+                {(formData.qualifications || []).map((qual, index) => (
+                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                    {qual}
+                    <X 
+                      className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                      onClick={() => removeQualification(index)} 
+                    />
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="Add qualification (e.g., MBA, B.Tech)" 
+                  value={newQualification} 
+                  onChange={(e) => setNewQualification(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addQualification())}
+                />
+                <Button type="button" size="sm" variant="outline" onClick={addQualification}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Certifications */}
+            <div>
+              <Label>Certifications</Label>
+              <div className="flex flex-wrap gap-2 mb-2 min-h-[32px]">
+                {(formData.certifications || []).map((cert, index) => (
+                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                    {cert}
+                    <X 
+                      className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                      onClick={() => removeCertification(index)} 
+                    />
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="Add certification (e.g., PMP, AWS Certified)" 
+                  value={newCertification} 
+                  onChange={(e) => setNewCertification(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCertification())}
+                />
+                <Button type="button" size="sm" variant="outline" onClick={addCertification}>
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
