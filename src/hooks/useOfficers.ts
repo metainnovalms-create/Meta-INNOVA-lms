@@ -227,6 +227,23 @@ export function useDeleteOfficerCascade() {
       await deleteAccessGrants('granting_officer_id', officerId);
       await deleteAccessGrants('receiving_officer_id', officerId);
       
+      // 7. Delete from purchase_requests (officer's purchase requests)
+      await supabase.from('purchase_requests').delete().eq('officer_id', officerId);
+      
+      // 8. Delete from daily_work_logs
+      await supabase.from('daily_work_logs').delete().eq('officer_id', officerId);
+      
+      // 9. Update class_session_attendance to remove officer reference (preserve records)
+      await supabase
+        .from('class_session_attendance')
+        .update({ officer_id: null, completed_by: null })
+        .eq('officer_id', officerId);
+      
+      await supabase
+        .from('class_session_attendance')
+        .update({ completed_by: null })
+        .eq('completed_by', officerId);
+      
       // Finally delete from officers table
       const { error } = await supabase
         .from('officers')
