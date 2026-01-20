@@ -287,10 +287,10 @@ export function useStudents(institutionId?: string, classId?: string) {
     },
   });
 
-  // Delete student mutation
+  // Delete student mutation - uses edge function for proper cascade deletion
   const deleteStudentMutation = useMutation({
     mutationFn: async ({ id, institution_id, class_id }: { id: string; institution_id: string; class_id?: string }) => {
-      console.log('[Students] Deleting student:', id);
+      console.log('[Students] Deleting student via edge function:', id);
       
       // Verify authentication
       const authCheck = await verifyAuth();
@@ -298,17 +298,22 @@ export function useStudents(institutionId?: string, classId?: string) {
         throw new Error(authCheck.error);
       }
 
-      const { error } = await supabase
-        .from('students')
-        .delete()
-        .eq('id', id);
+      // Call edge function for proper cascade deletion (includes auth user, profiles, user_roles)
+      const { data, error } = await supabase.functions.invoke('delete-student-user', {
+        body: { student_id: id },
+      });
 
       if (error) {
-        console.error('[Students] Delete error:', error);
-        throw new Error(`Failed to delete student: ${error.message}`);
+        console.error('[Students] Edge function error:', error);
+        throw new Error(error.message || 'Failed to delete student');
+      }
+
+      if (data?.error) {
+        console.error('[Students] Delete error:', data.error);
+        throw new Error(data.error);
       }
       
-      console.log('[Students] Deleted successfully');
+      console.log('[Students] Deleted successfully:', data);
       return id;
     },
     onMutate: async ({ id, institution_id, class_id }) => {
