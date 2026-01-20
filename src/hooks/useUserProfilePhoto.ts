@@ -11,7 +11,7 @@ export function useUserProfilePhoto(userId: string | undefined) {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('avatar')
+        .select('avatar, profile_photo_url')
         .eq('id', userId)
         .single();
       
@@ -20,7 +20,7 @@ export function useUserProfilePhoto(userId: string | undefined) {
         return null;
       }
       
-      return data?.avatar || null;
+      return data?.avatar || data?.profile_photo_url || null;
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5 minutes
