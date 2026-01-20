@@ -44,7 +44,7 @@ import {
   Wallet,
   FileText,
 } from 'lucide-react';
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, isSameDay, isAfter, subMonths, getDaysInMonth } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isAfter, subMonths, getDaysInMonth } from 'date-fns';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,6 +52,7 @@ import { formatCurrency } from '@/utils/attendanceHelpers';
 import { PayslipDialog } from './PayslipDialog';
 import { getPayrollConfig, getOfficerSalaryDetails, getStaffSalaryDetails } from '@/services/payrollConfig.service';
 import { SalaryStructure, StatutoryInfo, PayrollConfig, calculatePFDeduction, calculateESIDeduction, calculateProfessionalTax } from '@/types/payroll';
+import { calendarDayTypeService } from '@/services/calendarDayType.service';
 
 interface DayRecord {
   date: string;
@@ -307,22 +308,20 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
             .gte('date', startDateStr)
             .lte('date', endDateStr);
 
-      // Fetch holidays based on type: Officers get institution_holidays, Staff get company_holidays
-      const holidaysPromise = isOfficer && selectedEmployee.institution_id
-        ? supabase
-            .from('institution_holidays')
-            .select('*')
-            .eq('institution_id', selectedEmployee.institution_id)
-            .eq('year', year)
-        : supabase
-            .from('company_holidays')
-            .select('*')
-            .eq('year', year);
+      // Fetch holidays and weekends from calendar_day_types based on employee type
+      // Officers use institution calendar, Staff use company calendar
+      const calendarType = isOfficer ? 'institution' : 'company';
+      const institutionIdForCalendar = isOfficer ? selectedEmployee.institution_id : undefined;
 
       // Fetch all data in parallel
-      const [attendanceResult, holidaysResult, leavesResult, overtimeResult] = await Promise.all([
+      const [attendanceResult, nonWorkingDaysResult, leavesResult, overtimeResult] = await Promise.all([
         attendancePromise,
-        holidaysPromise,
+        calendarDayTypeService.getNonWorkingDaysInRange(
+          calendarType,
+          startDateStr,
+          endDateStr,
+          institutionIdForCalendar || undefined
+        ),
         supabase
           .from('leave_applications')
           .select('*')
@@ -357,10 +356,11 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
         attendanceMap.set(a.date, a as AttendanceRecord);
       });
 
+      // Build holiday and weekend maps from calendar_day_types result
       const holidayMap = new Map<string, { name: string; is_paid: boolean }>();
-      (holidaysResult.data || []).forEach((h) => {
-        const hDate = format(new Date(h.date), 'yyyy-MM-dd');
-        holidayMap.set(hDate, { name: h.name, is_paid: h.is_paid !== false });
+      const weekendSet = new Set<string>(nonWorkingDaysResult.weekends);
+      nonWorkingDaysResult.holidays.forEach((date) => {
+        holidayMap.set(date, { name: 'Holiday', is_paid: true });
       });
 
       // Store leave data with paid/lop info
@@ -453,7 +453,8 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
 
       const records: DayRecord[] = allDays.map((day) => {
         const dateStr = format(day, 'yyyy-MM-dd');
-        const isWeekendDay = isWeekend(day);
+        // Use calendar_day_types weekends instead of JavaScript isWeekend()
+        const isWeekendDay = weekendSet.has(dateStr);
         const holiday = holidayMap.get(dateStr);
         const leave = leaveMap.get(dateStr);
         const attendance = attendanceMap.get(dateStr);
