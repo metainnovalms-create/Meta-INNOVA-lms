@@ -160,22 +160,48 @@ export function CreateManualAssessment({ restrictToInstitutionId, onComplete, on
       return;
     }
 
+    const institutionId = selectedInstitutionId || restrictToInstitutionId;
+    if (!institutionId) {
+      toast.error('Institution is required');
+      return;
+    }
+
     setIsSaving(true);
 
     try {
-      // Get current user
+      // Get current user and their role
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        setIsSaving(false);
+        return;
+      }
+
+      // Determine user role for created_by_role
+      const { data: userRoleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
       
-      // 1. Create the manual assessment
-      const now = new Date().toISOString();
+      const createdByRole = userRoleData?.role || 'officer';
+      
+      // Create proper ISO timestamps (start of day and end of day for conducted date)
+      const conductedDate = new Date(conductedAt);
+      const startTime = new Date(conductedDate);
+      startTime.setHours(0, 0, 0, 0);
+      const endTime = new Date(conductedDate);
+      endTime.setHours(23, 59, 59, 999);
+
+      // 1. Create the manual assessment with valid status
       const { data: newAssessment, error: assessmentError } = await supabase
         .from('assessments')
         .insert({
           title: assessmentTitle,
           description: `Manual assessment conducted on ${conductedAt}`,
-          status: 'completed',
-          start_time: conductedAt,
-          end_time: conductedAt,
+          status: 'published', // Valid status - 'completed' is UI-derived, not stored
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
           duration_minutes: 0,
           total_points: totalMarks,
           pass_percentage: passPercentage,
@@ -184,26 +210,45 @@ export function CreateManualAssessment({ restrictToInstitutionId, onComplete, on
           shuffle_questions: false,
           show_results_immediately: false,
           allow_review_after_submission: false,
-          created_by: user?.id,
-          created_by_role: 'system_admin',
-          institution_id: selectedInstitutionId || restrictToInstitutionId
+          created_by: user.id,
+          created_by_role: createdByRole,
+          institution_id: institutionId
         })
         .select()
         .single();
 
       if (assessmentError) {
-        throw assessmentError;
+        console.error('Assessment creation error:', assessmentError);
+        toast.error(`Failed to create assessment: ${assessmentError.message}`);
+        setIsSaving(false);
+        return;
       }
 
-      // 2. Create manual attempts for each student
+      // 2. Create class assignment so assessment is visible to students/management
+      const { error: assignmentError } = await supabase
+        .from('assessment_class_assignments')
+        .insert({
+          assessment_id: newAssessment.id,
+          institution_id: institutionId,
+          class_id: selectedClassId,
+          assigned_by: user.id
+        });
+
+      if (assignmentError) {
+        console.error('Class assignment error:', assignmentError);
+        // Continue anyway - assessment is created, just not assigned
+      }
+
+      // 3. Create manual attempts for each student
+      let failedStudents: string[] = [];
       for (const result of results) {
         const percentage = totalMarks > 0 ? (result.score / totalMarks) * 100 : 0;
         
-        await assessmentService.createManualAttempt({
+        const success = await assessmentService.createManualAttempt({
           assessment_id: newAssessment.id,
           student_id: result.student_id,
           class_id: selectedClassId,
-          institution_id: selectedInstitutionId || restrictToInstitutionId || '',
+          institution_id: institutionId,
           score: result.score,
           total_points: totalMarks,
           percentage,
@@ -211,13 +256,22 @@ export function CreateManualAssessment({ restrictToInstitutionId, onComplete, on
           conducted_at: new Date(conductedAt).toISOString(),
           manual_notes: result.notes || manualNotes
         });
+
+        if (!success) {
+          failedStudents.push(result.student_name);
+        }
       }
 
-      toast.success('Manual assessment created and results saved successfully');
+      if (failedStudents.length > 0) {
+        toast.warning(`Assessment created but failed to save results for: ${failedStudents.join(', ')}`);
+      } else {
+        toast.success('Manual assessment created and results saved successfully');
+      }
+      
       onComplete?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving manual assessment:', error);
-      toast.error('Failed to save assessment');
+      toast.error(`Failed to save assessment: ${error?.message || 'Unknown error'}`);
     } finally {
       setIsSaving(false);
     }
