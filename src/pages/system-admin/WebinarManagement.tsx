@@ -86,7 +86,7 @@ export default function WebinarManagement() {
     if (!selectedWebinar) return;
     
     try {
-      await webinarService.deleteWebinar(selectedWebinar.id);
+      await webinarService.hardDeleteWebinar(selectedWebinar.id);
       toast.success('Webinar deleted successfully');
       loadWebinars();
     } catch (error) {
