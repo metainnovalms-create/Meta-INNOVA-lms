@@ -88,7 +88,7 @@ export default function Login() {
         <CardHeader className="space-y-1 text-center">
           <div 
             className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full overflow-hidden" 
-            style={{ backgroundColor: branding.sidebar_logo_bg || '#051c2d' }}
+            style={{ backgroundColor: '#ffffff' }}
           >
             <img 
               src={branding.logo_collapsed_url || logoImage} 
