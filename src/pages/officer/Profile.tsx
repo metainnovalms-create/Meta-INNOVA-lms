@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Layout } from '@/components/layout/Layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useOfficerByUserId } from '@/hooks/useOfficerProfile';
-import { OfficerMonthlyAttendanceCalendar } from '@/components/officer/OfficerMonthlyAttendanceCalendar';
 import { OfficerDailyAttendanceDetails } from '@/components/officer/OfficerDailyAttendanceDetails';
 import { Loader2 } from 'lucide-react';
 import {
@@ -23,9 +22,7 @@ import {
   CreditCard,
   Shield,
   Calendar,
-  Clock,
   ChevronDown,
-  CalendarDays,
 } from 'lucide-react';
 
 export default function Profile() {
@@ -278,21 +275,13 @@ export default function Profile() {
 
         {/* Full Width Cards */}
         <div className="space-y-6">
-          {/* My Attendance Section */}
+          {/* Daily Attendance Details */}
           {officer && selectedMonth && (
-            <>
-              <OfficerMonthlyAttendanceCalendar
-                officerId={officer.id}
-                month={selectedMonth}
-                onMonthChange={setSelectedMonth}
-              />
-              
-              <OfficerDailyAttendanceDetails
-                officerId={officer.id}
-                officerName={officer.full_name}
-                month={selectedMonth}
-              />
-            </>
+            <OfficerDailyAttendanceDetails
+              officerId={officer.id}
+              officerName={officer.full_name}
+              month={selectedMonth}
+            />
           )}
 
           {/* Assigned Institutions */}
