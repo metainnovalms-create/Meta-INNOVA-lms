@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Package, AlertTriangle, CheckCircle, TrendingUp, Search, Plus, Edit, Trash2, XCircle, Settings, UserPlus } from 'lucide-react';
+import { Package, AlertTriangle, CheckCircle, TrendingUp, Search, Plus, Edit, Trash2, XCircle, Settings, UserPlus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,6 +29,7 @@ import {
 } from '@/hooks/useInventory';
 import { InventoryItem, PurchaseRequest, InventoryIssue } from '@/types/inventory';
 import { format } from 'date-fns';
+import { BulkImportInventoryDialog } from '@/components/inventory/BulkImportInventoryDialog';
 
 const getStatusBadge = (status: string) => {
   const variants: Record<string, { className: string; label: string }> = {
@@ -76,6 +77,7 @@ export default function InventoryManagement() {
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [bulkImportDialogOpen, setBulkImportDialogOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [actionRequest, setActionRequest] = useState<PurchaseRequest | null>(null);
@@ -314,6 +316,10 @@ export default function InventoryManagement() {
                     className="pl-8" 
                   />
                 </div>
+                <Button variant="outline" onClick={() => setBulkImportDialogOpen(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Bulk Import
+                </Button>
                 <Button onClick={() => setAddDialogOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Item
@@ -845,6 +851,14 @@ export default function InventoryManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Import Dialog */}
+      <BulkImportInventoryDialog
+        open={bulkImportDialogOpen}
+        onOpenChange={setBulkImportDialogOpen}
+        institutionId={selectedInstitution}
+        userId={user?.id || ''}
+      />
     </Layout>
   );
 }
