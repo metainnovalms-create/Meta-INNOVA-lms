@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { assessmentService } from '@/services/assessment.service';
 import { toast } from 'sonner';
@@ -30,6 +32,7 @@ interface ManualResult {
   score: number;
   passed: boolean;
   notes: string;
+  is_absent: boolean;
 }
 
 interface Institution {
@@ -125,7 +128,8 @@ export function CreateManualAssessment({ restrictToInstitutionId, onComplete, on
       student_name: student.name,
       score: 0,
       passed: false,
-      notes: ''
+      notes: '',
+      is_absent: false
     })));
   };
 
@@ -148,6 +152,20 @@ export function CreateManualAssessment({ restrictToInstitutionId, onComplete, on
     setResults(results.map(r => 
       r.student_id === studentId ? { ...r, notes } : r
     ));
+  };
+
+  const handleAbsentChange = (studentId: string, isAbsent: boolean) => {
+    setResults(results.map(r => {
+      if (r.student_id === studentId) {
+        return { 
+          ...r, 
+          is_absent: isAbsent,
+          score: isAbsent ? 0 : r.score,
+          passed: isAbsent ? false : r.passed
+        };
+      }
+      return r;
+    }));
   };
 
   const handleSubmit = async () => {
@@ -254,7 +272,8 @@ export function CreateManualAssessment({ restrictToInstitutionId, onComplete, on
           percentage,
           passed: result.passed,
           conducted_at: new Date(conductedAt).toISOString(),
-          manual_notes: result.notes || manualNotes
+          manual_notes: result.notes || manualNotes,
+          is_absent: result.is_absent
         });
 
         if (!success) {
@@ -410,15 +429,22 @@ export function CreateManualAssessment({ restrictToInstitutionId, onComplete, on
               <TableHeader>
                 <TableRow>
                   <TableHead>Student Name</TableHead>
+                  <TableHead className="w-24 text-center">Absent</TableHead>
                   <TableHead className="w-32">Score (/{totalMarks})</TableHead>
-                  <TableHead className="w-24">Passed</TableHead>
+                  <TableHead className="w-24 text-center">Status</TableHead>
                   <TableHead>Notes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {results.map((result) => (
-                  <TableRow key={result.student_id}>
+                  <TableRow key={result.student_id} className={result.is_absent ? 'opacity-60' : ''}>
                     <TableCell className="font-medium">{result.student_name}</TableCell>
+                    <TableCell className="text-center">
+                      <Checkbox
+                        checked={result.is_absent}
+                        onCheckedChange={(checked) => handleAbsentChange(result.student_id, checked === true)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Input
                         type="number"
@@ -427,17 +453,27 @@ export function CreateManualAssessment({ restrictToInstitutionId, onComplete, on
                         value={result.score}
                         onChange={(e) => handleScoreChange(result.student_id, parseInt(e.target.value) || 0)}
                         className="w-24"
+                        disabled={result.is_absent}
                       />
                     </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={result.passed}
-                        onCheckedChange={(checked) => handlePassedChange(result.student_id, checked)}
-                      />
+                    <TableCell className="text-center">
+                      {result.is_absent ? (
+                        <Badge variant="outline" className="bg-muted">Absent</Badge>
+                      ) : (
+                        <div className="flex items-center justify-center gap-2">
+                          <Switch
+                            checked={result.passed}
+                            onCheckedChange={(checked) => handlePassedChange(result.student_id, checked)}
+                          />
+                          <Badge variant={result.passed ? 'default' : 'secondary'}>
+                            {result.passed ? 'Pass' : 'Fail'}
+                          </Badge>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Input
-                        placeholder="Individual notes..."
+                        placeholder={result.is_absent ? "Reason for absence" : "Individual notes..."}
                         value={result.notes}
                         onChange={(e) => handleNotesChange(result.student_id, e.target.value)}
                       />
