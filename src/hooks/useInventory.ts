@@ -75,6 +75,23 @@ export function useDeleteInventoryItem() {
   });
 }
 
+export function useBulkDeleteInventoryItems() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (itemIds: string[]) => inventoryService.bulkDeleteInventoryItems(itemIds),
+    onSuccess: (_, itemIds) => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-stats'] });
+      toast({ title: `${itemIds.length} item(s) removed successfully` });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to remove items", description: error.message, variant: "destructive" });
+    }
+  });
+}
+
 // ==================== PURCHASE REQUESTS ====================
 
 export function usePurchaseRequests(institutionId?: string, officerId?: string) {
