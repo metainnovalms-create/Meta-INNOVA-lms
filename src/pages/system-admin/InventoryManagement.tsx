@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Package, AlertTriangle, CheckCircle, TrendingUp, Search, Plus, Edit, Trash2, XCircle, Settings, UserPlus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useInstitutions } from '@/hooks/useInstitutions';
@@ -21,6 +23,7 @@ import {
   useAddInventoryItem, 
   useUpdateInventoryItem, 
   useDeleteInventoryItem,
+  useBulkDeleteInventoryItems,
   useApprovePurchaseRequest,
   useRejectPurchaseRequest,
   useApprovalChain,
@@ -69,10 +72,15 @@ export default function InventoryManagement() {
   const addItem = useAddInventoryItem();
   const updateItem = useUpdateInventoryItem();
   const deleteItem = useDeleteInventoryItem();
+  const bulkDeleteItems = useBulkDeleteInventoryItems();
   const approveRequest = useApprovePurchaseRequest();
   const rejectRequest = useRejectPurchaseRequest();
   const assignApprover = useAssignApprover();
   const removeApprover = useRemoveApprover();
+  
+  // Selection state for bulk delete
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -162,6 +170,40 @@ export default function InventoryManagement() {
         onSuccess: () => toast.success('Item deleted'),
       });
     }
+  };
+
+  // Bulk selection handlers
+  const toggleItemSelection = (itemId: string) => {
+    setSelectedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedItems.size === filteredInventory.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(filteredInventory.map(item => item.id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    setBulkDeleteDialogOpen(true);
+  };
+
+  const confirmBulkDelete = () => {
+    bulkDeleteItems.mutate(Array.from(selectedItems), {
+      onSuccess: () => {
+        setSelectedItems(new Set());
+        setBulkDeleteDialogOpen(false);
+      },
+    });
   };
 
   const openEditDialog = (item: InventoryItem) => {
@@ -316,6 +358,12 @@ export default function InventoryManagement() {
                     className="pl-8" 
                   />
                 </div>
+                {selectedItems.size > 0 && (
+                  <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkDeleteItems.isPending}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete ({selectedItems.size})
+                  </Button>
+                )}
                 <Button variant="outline" onClick={() => setBulkImportDialogOpen(true)}>
                   <Upload className="h-4 w-4 mr-2" />
                   Bulk Import
@@ -348,6 +396,13 @@ export default function InventoryManagement() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={selectedItems.size === filteredInventory.length && filteredInventory.length > 0}
+                            onCheckedChange={toggleSelectAll}
+                            aria-label="Select all items"
+                          />
+                        </TableHead>
                         <TableHead>Sl.No</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Description</TableHead>
@@ -360,7 +415,14 @@ export default function InventoryManagement() {
                     </TableHeader>
                     <TableBody>
                       {filteredInventory.map((item) => (
-                        <TableRow key={item.id}>
+                        <TableRow key={item.id} className={selectedItems.has(item.id) ? 'bg-muted/50' : ''}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedItems.has(item.id)}
+                              onCheckedChange={() => toggleItemSelection(item.id)}
+                              aria-label={`Select ${item.name}`}
+                            />
+                          </TableCell>
                           <TableCell>{item.sl_no}</TableCell>
                           <TableCell className="font-medium">{item.name}</TableCell>
                           <TableCell className="max-w-[200px] truncate">{item.description || '-'}</TableCell>
@@ -859,6 +921,28 @@ export default function InventoryManagement() {
         institutionId={selectedInstitution}
         userId={user?.id || ''}
       />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedItems.size} item(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will mark the selected items as disposed. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={bulkDeleteItems.isPending}
+            >
+              {bulkDeleteItems.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }
