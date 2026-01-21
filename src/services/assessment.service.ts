@@ -925,6 +925,7 @@ export const assessmentService = {
     passed: boolean;
     conducted_at: string;
     manual_notes?: string;
+    is_absent?: boolean;
   }): Promise<boolean> {
     const { error } = await supabase
       .from('assessment_attempts')
@@ -933,11 +934,11 @@ export const assessmentService = {
         student_id: data.student_id,
         class_id: data.class_id,
         institution_id: data.institution_id,
-        score: data.score,
+        score: data.is_absent ? 0 : data.score,
         total_points: data.total_points,
-        percentage: data.percentage,
-        passed: data.passed,
-        status: 'submitted',
+        percentage: data.is_absent ? 0 : data.percentage,
+        passed: data.is_absent ? false : data.passed,
+        status: data.is_absent ? 'absent' : 'submitted',
         is_manual: true,
         manual_notes: data.manual_notes,
         conducted_at: data.conducted_at,
