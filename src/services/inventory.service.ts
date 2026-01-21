@@ -119,6 +119,17 @@ export async function deleteInventoryItem(itemId: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function bulkDeleteInventoryItems(itemIds: string[]): Promise<void> {
+  if (itemIds.length === 0) return;
+  
+  const { error } = await supabase
+    .from('inventory_items')
+    .update({ status: 'disposed' })
+    .in('id', itemIds);
+
+  if (error) throw error;
+}
+
 // ==================== PURCHASE REQUESTS ====================
 
 export async function getPurchaseRequests(institutionId?: string, officerId?: string): Promise<PurchaseRequest[]> {
