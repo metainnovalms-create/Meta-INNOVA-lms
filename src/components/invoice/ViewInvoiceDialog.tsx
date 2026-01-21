@@ -265,6 +265,20 @@ export function ViewInvoiceDialog({
             {/* Signature */}
             <div className="flex justify-end pt-6">
               <div className="text-center">
+                {invoice.signature_url ? (
+                  <div className="flex justify-center mb-2">
+                    <img
+                      src={invoice.signature_url}
+                      alt="Authorized signatory signature"
+                      className="h-14 w-auto object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex justify-center mb-2">
+                    <div className="w-40 border-b" />
+                  </div>
+                )}
                 <p className="text-sm text-muted-foreground mb-8">Authorized Signatory</p>
                 <p className="font-medium">For {invoice.from_company_name}</p>
               </div>
