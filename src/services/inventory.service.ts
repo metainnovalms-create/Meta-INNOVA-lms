@@ -113,7 +113,7 @@ export async function updateInventoryItem(
 export async function deleteInventoryItem(itemId: string): Promise<void> {
   const { error } = await supabase
     .from('inventory_items')
-    .update({ status: 'disposed' })
+    .delete()
     .eq('id', itemId);
 
   if (error) throw error;
@@ -124,7 +124,7 @@ export async function bulkDeleteInventoryItems(itemIds: string[]): Promise<void>
   
   const { error } = await supabase
     .from('inventory_items')
-    .update({ status: 'disposed' })
+    .delete()
     .in('id', itemIds);
 
   if (error) throw error;
