@@ -1,6 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import * as inventoryService from "@/services/inventory.service";
+import {
+  getInventoryItems,
+  addInventoryItem,
+  updateInventoryItem,
+  deleteInventoryItem,
+  bulkDeleteInventoryItems,
+  getPurchaseRequests,
+  createPurchaseRequest,
+  approvePurchaseRequestByInstitution,
+  approvePurchaseRequestFinal,
+  rejectPurchaseRequest,
+  getInventoryIssues,
+  reportInventoryIssue,
+  acknowledgeIssue,
+  resolveIssue,
+  getApprovalChain,
+  assignApprover,
+  removeApprover,
+  getInventoryStats
+} from "@/services/inventory.service";
 import type {
   AddInventoryItemData,
   CreatePurchaseRequestData,
@@ -12,7 +31,7 @@ import type {
 export function useInventoryItems(institutionId?: string) {
   return useQuery({
     queryKey: ['inventory-items', institutionId],
-    queryFn: () => inventoryService.getInventoryItems(institutionId),
+    queryFn: () => getInventoryItems(institutionId),
     enabled: true
   });
 }
@@ -26,7 +45,7 @@ export function useAddInventoryItem() {
       institutionId: string;
       itemData: AddInventoryItemData;
       userId: string;
-    }) => inventoryService.addInventoryItem(institutionId, itemData, userId),
+    }) => addInventoryItem(institutionId, itemData, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-stats'] });
@@ -46,7 +65,7 @@ export function useUpdateInventoryItem() {
     mutationFn: ({ itemId, itemData }: {
       itemId: string;
       itemData: Partial<AddInventoryItemData>;
-    }) => inventoryService.updateInventoryItem(itemId, itemData),
+    }) => updateInventoryItem(itemId, itemData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-stats'] });
@@ -63,7 +82,7 @@ export function useDeleteInventoryItem() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (itemId: string) => inventoryService.deleteInventoryItem(itemId),
+    mutationFn: (itemId: string) => deleteInventoryItem(itemId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-stats'] });
@@ -80,7 +99,7 @@ export function useBulkDeleteInventoryItems() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (itemIds: string[]) => inventoryService.bulkDeleteInventoryItems(itemIds),
+    mutationFn: (itemIds: string[]) => bulkDeleteInventoryItems(itemIds),
     onSuccess: (_, itemIds) => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-stats'] });
@@ -97,7 +116,7 @@ export function useBulkDeleteInventoryItems() {
 export function usePurchaseRequests(institutionId?: string, officerId?: string) {
   return useQuery({
     queryKey: ['purchase-requests', institutionId, officerId],
-    queryFn: () => inventoryService.getPurchaseRequests(institutionId, officerId),
+    queryFn: () => getPurchaseRequests(institutionId, officerId),
     enabled: true
   });
 }
@@ -111,7 +130,7 @@ export function useCreatePurchaseRequest() {
       requestData: CreatePurchaseRequestData;
       officerId: string;
       requesterName: string;
-    }) => inventoryService.createPurchaseRequest(requestData, officerId, requesterName),
+    }) => createPurchaseRequest(requestData, officerId, requesterName),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['purchase-requests'] });
       toast({ title: "Purchase request submitted", description: `Request ${data.request_code} created` });
@@ -131,7 +150,7 @@ export function useApprovePurchaseRequestByInstitution() {
       requestId: string;
       approverId: string;
       comments?: string;
-    }) => inventoryService.approvePurchaseRequestByInstitution(requestId, approverId, comments),
+    }) => approvePurchaseRequestByInstitution(requestId, approverId, comments),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-requests'] });
       toast({ title: "Request approved", description: "Forwarded to CEO for final approval" });
@@ -154,8 +173,8 @@ export function useApprovePurchaseRequest() {
       approverType: 'institution' | 'ceo';
       comments?: string;
     }) => approverType === 'institution' 
-      ? inventoryService.approvePurchaseRequestByInstitution(requestId, approverId, comments)
-      : inventoryService.approvePurchaseRequestFinal(requestId, approverId, comments),
+      ? approvePurchaseRequestByInstitution(requestId, approverId, comments)
+      : approvePurchaseRequestFinal(requestId, approverId, comments),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-requests'] });
       toast({ title: "Request approved" });
@@ -172,7 +191,7 @@ export function useReportIssue() {
 
   return useMutation({
     mutationFn: (issueData: ReportIssueData) => 
-      inventoryService.reportInventoryIssue(issueData, '', ''),
+      reportInventoryIssue(issueData, '', ''),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['inventory-issues'] });
       toast({ title: "Issue reported", description: `Issue ${data.issue_code} submitted` });
@@ -192,7 +211,7 @@ export function useApprovePurchaseRequestFinal() {
       requestId: string;
       approverId: string;
       comments?: string;
-    }) => inventoryService.approvePurchaseRequestFinal(requestId, approverId, comments),
+    }) => approvePurchaseRequestFinal(requestId, approverId, comments),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-requests'] });
       toast({ title: "Request fully approved" });
@@ -212,7 +231,7 @@ export function useRejectPurchaseRequest() {
       requestId: string;
       rejectorId: string;
       reason: string;
-    }) => inventoryService.rejectPurchaseRequest(requestId, rejectorId, reason),
+    }) => rejectPurchaseRequest(requestId, rejectorId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-requests'] });
       toast({ title: "Request rejected" });
@@ -228,7 +247,7 @@ export function useRejectPurchaseRequest() {
 export function useInventoryIssues(institutionId?: string, reportedBy?: string) {
   return useQuery({
     queryKey: ['inventory-issues', institutionId, reportedBy],
-    queryFn: () => inventoryService.getInventoryIssues(institutionId, reportedBy),
+    queryFn: () => getInventoryIssues(institutionId, reportedBy),
     enabled: true
   });
 }
@@ -242,7 +261,7 @@ export function useReportInventoryIssue() {
       issueData: ReportIssueData;
       reporterId: string;
       reporterName: string;
-    }) => inventoryService.reportInventoryIssue(issueData, reporterId, reporterName),
+    }) => reportInventoryIssue(issueData, reporterId, reporterName),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['inventory-issues'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-stats'] });
@@ -260,7 +279,7 @@ export function useAcknowledgeIssue() {
 
   return useMutation({
     mutationFn: ({ issueId, userId }: { issueId: string; userId: string }) =>
-      inventoryService.acknowledgeIssue(issueId, userId),
+      acknowledgeIssue(issueId, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-issues'] });
       toast({ title: "Issue acknowledged" });
@@ -280,7 +299,7 @@ export function useResolveIssue() {
       issueId: string;
       userId: string;
       notes: string;
-    }) => inventoryService.resolveIssue(issueId, userId, notes),
+    }) => resolveIssue(issueId, userId, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-issues'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-stats'] });
@@ -297,7 +316,7 @@ export function useResolveIssue() {
 export function useApprovalChain(institutionId?: string) {
   return useQuery({
     queryKey: ['approval-chain', institutionId],
-    queryFn: () => inventoryService.getApprovalChain(institutionId),
+    queryFn: () => getApprovalChain(institutionId),
     enabled: true
   });
 }
@@ -313,7 +332,7 @@ export function useAssignApprover() {
       approverType: 'ceo' | 'position';
       positionId: string | null;
       assignedBy: string;
-    }) => inventoryService.assignApprover(institutionId, approverUserId, approverType, positionId, assignedBy),
+    }) => assignApprover(institutionId, approverUserId, approverType, positionId, assignedBy),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approval-chain'] });
       toast({ title: "Approver assigned" });
@@ -329,7 +348,7 @@ export function useRemoveApprover() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (chainId: string) => inventoryService.removeApprover(chainId),
+    mutationFn: (chainId: string) => removeApprover(chainId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approval-chain'] });
       toast({ title: "Approver removed" });
@@ -345,7 +364,7 @@ export function useRemoveApprover() {
 export function useInventoryStats(institutionId?: string) {
   return useQuery({
     queryKey: ['inventory-stats', institutionId],
-    queryFn: () => inventoryService.getInventoryStats(institutionId),
+    queryFn: () => getInventoryStats(institutionId),
     enabled: true
   });
 }
