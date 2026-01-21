@@ -108,7 +108,7 @@ export interface AssessmentAttempt {
   answers: AssessmentAnswer[];
   
   // Status
-  status: 'in_progress' | 'submitted' | 'auto_submitted' | 'evaluated' | 'retaken';
+  status: 'in_progress' | 'submitted' | 'auto_submitted' | 'evaluated' | 'retaken' | 'absent';
   
   // Manual assessment entry
   is_manual?: boolean;
