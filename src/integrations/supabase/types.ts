@@ -3029,6 +3029,7 @@ export type Database = {
           ship_to_pincode: string | null
           ship_to_state: string | null
           ship_to_state_code: string | null
+          signature_url: string | null
           status: string
           sub_total: number
           tds_amount: number | null
@@ -3098,6 +3099,7 @@ export type Database = {
           ship_to_pincode?: string | null
           ship_to_state?: string | null
           ship_to_state_code?: string | null
+          signature_url?: string | null
           status?: string
           sub_total?: number
           tds_amount?: number | null
@@ -3167,6 +3169,7 @@ export type Database = {
           ship_to_pincode?: string | null
           ship_to_state?: string | null
           ship_to_state_code?: string | null
+          signature_url?: string | null
           status?: string
           sub_total?: number
           tds_amount?: number | null
