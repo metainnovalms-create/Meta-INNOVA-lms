@@ -245,6 +245,14 @@ export async function fetchInvoiceById(id: string): Promise<Invoice | null> {
   
   invoice.line_items = lineItems as InvoiceLineItem[];
   
+  // If invoice doesn't have signature_url, fetch from company profile
+  if (!invoice.signature_url) {
+    const companyProfile = await fetchDefaultCompanyProfile();
+    if (companyProfile?.signature_url) {
+      invoice.signature_url = companyProfile.signature_url;
+    }
+  }
+  
   return invoice;
 }
 
@@ -332,6 +340,7 @@ export async function createInvoice(input: CreateInvoiceInput): Promise<Invoice>
       notes: input.notes,
       terms_and_conditions: input.terms_and_conditions,
       declaration: input.declaration,
+      signature_url: companyProfile?.signature_url,
       institution_id: input.institution_id,
       created_by: userData?.user?.id,
     }])
@@ -405,6 +414,9 @@ export async function createPurchaseInvoice(input: CreateInvoiceInput): Promise<
     throw new Error('Invoice number is required');
   }
   
+  // Fetch company profile to get signature
+  const companyProfile = await fetchDefaultCompanyProfile();
+  
   const totalAmount = input.total_amount || input.line_items.reduce((sum, item) => sum + item.amount, 0);
   
   // Create invoice with attachment details
@@ -432,6 +444,7 @@ export async function createPurchaseInvoice(input: CreateInvoiceInput): Promise<
       total_amount: totalAmount,
       balance_due: totalAmount,
       status: 'draft',
+      signature_url: companyProfile?.signature_url,
       created_by: userData?.user?.id,
       attachment_url: input.attachment_url,
       attachment_name: input.attachment_name,
