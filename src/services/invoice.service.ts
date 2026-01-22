@@ -164,8 +164,18 @@ export async function fetchDefaultCompanyProfile(): Promise<CompanyProfile | nul
   const { data, error } = await supabase
     .from('company_profiles')
     .select('*')
+    .eq('profile_type', 'primary')
     .eq('is_default', true)
     .single();
+  
+  // Debug logging for signature URL troubleshooting
+  console.log('[Invoice] Fetched company profile:', {
+    id: data?.id,
+    signature_url: data?.signature_url,
+    profile_type: data?.profile_type,
+    is_default: data?.is_default,
+    error: error?.message
+  });
   
   if (error && error.code !== 'PGRST116') throw error;
   return data as CompanyProfile | null;
