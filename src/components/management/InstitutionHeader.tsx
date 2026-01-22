@@ -8,7 +8,7 @@ interface InstitutionHeaderProps {
   establishedYear?: string;
   location?: string;
   totalStudents?: number;
-  academicYear?: string;
+  academicYear={institution.settings.academic_year};
   userRole?: string;
   assignedOfficers?: string[];
 }
