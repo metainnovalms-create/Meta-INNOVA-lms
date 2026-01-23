@@ -9,9 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Plus, Trash2, Save, Layers, PlayCircle, FileText } from 'lucide-react';
+import { Plus, Trash2, Save, Layers, PlayCircle, FileText, ImageIcon, Upload } from 'lucide-react';
 import { toast } from 'sonner';
-import { 
+import { uploadCourseThumbnail } from '@/services/courseStorage.service';
+import { StorageImage } from '@/components/course/StorageImage';
+import {
   useCourseById, 
   useUpdateCourse, 
   useUpdateModule, 
@@ -44,6 +46,9 @@ export function EditCourseDialog({ open, onOpenChange, courseId, onSave }: EditC
   const [prerequisites, setPrerequisites] = useState('');
   const [status, setStatus] = useState('draft');
   const [learningOutcomes, setLearningOutcomes] = useState<string[]>([]);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string>('');
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
 
   const { data: course, isLoading } = useCourseById(open ? courseId : null);
   const updateCourse = useUpdateCourse();
@@ -62,6 +67,8 @@ export function EditCourseDialog({ open, onOpenChange, courseId, onSave }: EditC
       setPrerequisites(course.prerequisites || '');
       setStatus(course.status);
       setLearningOutcomes(course.learning_outcomes || []);
+      setThumbnailUrl(course.thumbnail_url || '');
+      setThumbnailFile(null);
       
       if (course.modules?.length > 0 && !selectedLevelId) {
         setSelectedLevelId(course.modules[0].id);
@@ -69,10 +76,35 @@ export function EditCourseDialog({ open, onOpenChange, courseId, onSave }: EditC
     }
   }, [course]);
 
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnailFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setThumbnailUrl(previewUrl);
+    }
+  };
+
   const handleSave = async () => {
     if (!courseId) return;
 
     try {
+      let newThumbnailUrl = thumbnailUrl;
+      
+      // Upload new thumbnail if file selected
+      if (thumbnailFile) {
+        setIsUploadingThumbnail(true);
+        try {
+          const result = await uploadCourseThumbnail(thumbnailFile, courseId);
+          newThumbnailUrl = result.path;
+        } catch (uploadError) {
+          setIsUploadingThumbnail(false);
+          toast.error('Failed to upload thumbnail');
+          return;
+        }
+        setIsUploadingThumbnail(false);
+      }
+
       await updateCourse.mutateAsync({
         courseId,
         updates: {
@@ -81,7 +113,8 @@ export function EditCourseDialog({ open, onOpenChange, courseId, onSave }: EditC
           description,
           prerequisites,
           status,
-          learning_outcomes: learningOutcomes
+          learning_outcomes: learningOutcomes,
+          thumbnail_url: newThumbnailUrl || null
         }
       });
       onSave?.();
@@ -209,6 +242,56 @@ export function EditCourseDialog({ open, onOpenChange, courseId, onSave }: EditC
                     value={courseTitle}
                     onChange={(e) => setCourseTitle(e.target.value)}
                   />
+                </div>
+              </div>
+
+              {/* Course Thumbnail Section */}
+              <div className="space-y-2">
+                <Label>Course Thumbnail</Label>
+                <div className="flex items-start gap-4">
+                  {/* Thumbnail Preview */}
+                  <div className="relative w-32 h-20 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
+                    {thumbnailUrl ? (
+                      thumbnailFile ? (
+                        <img 
+                          src={thumbnailUrl} 
+                          alt="Course thumbnail" 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        <StorageImage 
+                          filePath={thumbnailUrl} 
+                          alt="Course thumbnail"
+                          className="w-full h-full object-cover"
+                        />
+                      )
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Upload Button */}
+                  <div className="flex-1">
+                    <label className="cursor-pointer inline-block">
+                      <div className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-accent transition-colors">
+                        <Upload className="h-4 w-4" />
+                        <span className="text-sm">
+                          {thumbnailFile ? 'Change Image' : 'Upload New Thumbnail'}
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleThumbnailChange}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Recommended: 1280x720px (16:9 ratio)
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -498,9 +581,9 @@ export function EditCourseDialog({ open, onOpenChange, courseId, onSave }: EditC
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={updateCourse.isPending}>
+            <Button onClick={handleSave} disabled={updateCourse.isPending || isUploadingThumbnail}>
               <Save className="h-4 w-4 mr-2" />
-              Save Changes
+              {isUploadingThumbnail ? 'Uploading...' : 'Save Changes'}
             </Button>
           </div>
         </Tabs>
