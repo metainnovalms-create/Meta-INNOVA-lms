@@ -543,7 +543,7 @@ export function EditCourseDialog({ open, onOpenChange, courseId, onSave }: EditC
                                     <SelectItem value="pdf">PDF</SelectItem>
                                     <SelectItem value="ppt">PowerPoint</SelectItem>
                                     <SelectItem value="youtube">YouTube</SelectItem>
-                                    <SelectItem value="video">Video</SelectItem>
+                                    <SelectItem value="video">Videos</SelectItem>
                                     <SelectItem value="link">Link</SelectItem>
                                   </SelectContent>
                                 </Select>
