@@ -487,9 +487,6 @@ export default function SystemAdminCourseDetail() {
                               <CardHeader>
                                 <div className="flex justify-between items-start">
                                   <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <Badge variant="secondary">Session {session.display_order + 1}</Badge>
-                                    </div>
                                     <CardTitle className="text-base">{session.title}</CardTitle>
                                     <CardDescription className="mt-1">{session.description}</CardDescription>
                                     {session.learning_objectives && session.learning_objectives.length > 0 && (
