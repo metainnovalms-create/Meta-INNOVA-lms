@@ -86,6 +86,20 @@ export function useCourses() {
   });
 }
 
+export function useTotalContentCount() {
+  return useQuery({
+    queryKey: ['total-content-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('course_content')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) throw error;
+      return count || 0;
+    }
+  });
+}
+
 export function useCourseById(courseId: string | null) {
   return useQuery({
     queryKey: ['course', courseId],
