@@ -65,10 +65,6 @@ export function AddSessionDialog({
       return;
     }
 
-    if (!description.trim()) {
-      toast.error('Please enter a session description');
-      return;
-    }
 
     const filteredObjectives = learningObjectives.filter(obj => obj.trim());
 
@@ -109,14 +105,13 @@ export function AddSessionDialog({
           </div>
           
           <div>
-            <Label htmlFor="session-description">Description *</Label>
+            <Label htmlFor="session-description">Description</Label>
             <Textarea
               id="session-description"
               placeholder="Brief overview of what this session covers"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              required
             />
           </div>
           
