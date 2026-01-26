@@ -6687,6 +6687,10 @@ export type Database = {
           start_counter: number
         }[]
       }
+      students_share_project: {
+        Args: { target_student_id: string; viewer_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:
