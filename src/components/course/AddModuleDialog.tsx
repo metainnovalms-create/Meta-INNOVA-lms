@@ -29,7 +29,7 @@ export function AddModuleDialog({ open, onOpenChange, onSave, module }: AddModul
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim()) return;
+    if (!title.trim()) return;
 
     onSave({
       title: title.trim(),
@@ -62,14 +62,13 @@ export function AddModuleDialog({ open, onOpenChange, onSave, module }: AddModul
             />
           </div>
           <div>
-            <Label htmlFor="module-description">Description *</Label>
+            <Label htmlFor="module-description">Description</Label>
             <Textarea
               id="module-description"
               placeholder="Describe what students will learn in this level"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
-              required
             />
           </div>
           <DialogFooter>
