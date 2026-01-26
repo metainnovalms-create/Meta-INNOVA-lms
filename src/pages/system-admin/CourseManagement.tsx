@@ -18,7 +18,7 @@ import { uploadCourseThumbnail } from '@/services/courseStorage.service';
 import { StorageImage } from '@/components/course/StorageImage';
 import { CoursePreviewDialog } from '@/components/course/CoursePreviewDialog';
 import { EditCourseDialog } from '@/components/course/EditCourseDialog';
-import { useCourses, useCourseById, useCreateCourse, useDeleteCourse, DbCourse } from '@/hooks/useCourses';
+import { useCourses, useCourseById, useCreateCourse, useDeleteCourse, useTotalContentCount, DbCourse } from '@/hooks/useCourses';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function CourseManagement() {
@@ -35,6 +35,7 @@ export default function CourseManagement() {
   const { data: selectedCourseData } = useCourseById(previewDialogOpen ? selectedCourseId : null);
   const createCourse = useCreateCourse();
   const deleteCourse = useDeleteCourse();
+  const { data: totalContentCount = 0 } = useTotalContentCount();
   
   // Course creation form state
   const [newCourse, setNewCourse] = useState({
@@ -60,7 +61,7 @@ export default function CourseManagement() {
     total: courses.length,
     active: courses.filter(c => c.status === 'active').length,
     draft: courses.filter(c => c.status === 'draft').length,
-    totalEnrollments: 0 // TODO: Add actual enrollments count
+    totalContent: totalContentCount
   };
 
   const handleCreateCourse = async (isDraft = false) => {
@@ -202,11 +203,11 @@ export default function CourseManagement() {
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Enrollments</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Total Content</CardTitle>
+                  <Layers className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{courseStats.totalEnrollments}</div>
+                  <div className="text-2xl font-bold">{courseStats.totalContent}</div>
                 </CardContent>
               </Card>
             </div>
