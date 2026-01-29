@@ -207,20 +207,20 @@ export const sdgService = {
       projectsRes,
       projectMembersRes,
       coursesRes,
-      courseInstitutionAssignmentsRes
+      courseClassAssignmentsRes
     ] = await Promise.all([
       supabase.from('institutions').select('id, name').eq('status', 'active'),
       supabase.from('projects').select('id, title, sdg_goals, institution_id, created_by_officer_id, status'),
       supabase.from('project_members').select('project_id, student_id'),
       supabase.from('courses').select('id, title, sdg_goals'),
-      supabase.from('course_institution_assignments').select('course_id, institution_id')
+      supabase.from('course_class_assignments').select('course_id, institution_id')
     ]);
 
     const institutions = institutionsRes.data || [];
     const projects = projectsRes.data || [];
     const projectMembers = projectMembersRes.data || [];
     const courses = coursesRes.data || [];
-    const courseAssignments = courseInstitutionAssignmentsRes.data || [];
+    const courseAssignments = courseClassAssignmentsRes.data || [];
 
     // Build course SDG map
     const courseSdgMap = new Map<string, number[]>();
@@ -257,10 +257,13 @@ export const sdgService = {
           .map(p => p.created_by_officer_id)
       );
 
-      // Get courses assigned to this institution
-      const instCourseIds = courseAssignments
-        .filter(ca => ca.institution_id === inst.id)
-        .map(ca => ca.course_id);
+      // Get unique courses assigned to this institution's classes
+      const instCourseIdsSet = new Set(
+        courseAssignments
+          .filter(ca => ca.institution_id === inst.id)
+          .map(ca => ca.course_id)
+      );
+      const instCourseIds = Array.from(instCourseIdsSet);
       
       const sdgCoursesAssigned = instCourseIds.filter(cid => courseSdgMap.has(cid)).length;
 
