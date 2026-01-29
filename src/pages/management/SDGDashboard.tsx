@@ -3,7 +3,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Target, FolderKanban, Users, TrendingUp, Building2 } from 'lucide-react';
+import { Target, FolderKanban, Users, TrendingUp, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { SDG_GOALS, getSDGByNumber } from '@/services/sdg.service';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,8 @@ export default function ManagementSDGDashboard() {
   const [projects, setProjects] = useState<any[]>([]);
   const [sdgCounts, setSDGCounts] = useState<Record<number, number>>({});
   const [totalStudents, setTotalStudents] = useState(0);
+  const [uniqueCourses, setUniqueCourses] = useState(0);
+  const [courseSdgCounts, setCourseSdgCounts] = useState<Record<number, number>>({});
 
   useEffect(() => {
     const loadInstitutionSDGData = async () => {
@@ -23,20 +25,19 @@ export default function ManagementSDGDashboard() {
 
       try {
         // Get projects for this institution
-        const { data } = await supabase
+        const { data: projectData } = await supabase
           .from('projects')
           .select('id, title, sdg_goals, status, progress, category')
           .eq('institution_id', user.tenant_id);
 
-        const institutionProjects = data || [];
+        const institutionProjects = projectData || [];
         
-        // Calculate SDG counts
-        const counts: Record<number, number> = {};
-
+        // Calculate SDG counts from projects
+        const projectCounts: Record<number, number> = {};
         institutionProjects.forEach(p => {
           const goals = p.sdg_goals as number[] | null;
           goals?.forEach(g => {
-            counts[g] = (counts[g] || 0) + 1;
+            projectCounts[g] = (projectCounts[g] || 0) + 1;
           });
         });
 
@@ -60,9 +61,39 @@ export default function ManagementSDGDashboard() {
           studentsInSDGProjects = uniqueStudents.size;
         }
 
+        // Get courses assigned to this institution's classes with their SDGs
+        const { data: courseAssignments } = await supabase
+          .from('course_class_assignments')
+          .select('course_id, courses(id, title, sdg_goals)')
+          .eq('institution_id', user.tenant_id);
+
+        // Extract unique courses and their SDGs
+        const uniqueCourseIds = new Set<string>();
+        const courseSDGCounts: Record<number, number> = {};
+        
+        courseAssignments?.forEach(ca => {
+          if (!uniqueCourseIds.has(ca.course_id)) {
+            uniqueCourseIds.add(ca.course_id);
+            const course = ca.courses as { id: string; title: string; sdg_goals: number[] | null } | null;
+            const goals = course?.sdg_goals;
+            goals?.forEach(g => {
+              courseSDGCounts[g] = (courseSDGCounts[g] || 0) + 1;
+            });
+          }
+        });
+
+        // Merge project and course SDG counts
+        const mergedCounts: Record<number, number> = { ...projectCounts };
+        Object.entries(courseSDGCounts).forEach(([key, count]) => {
+          const numKey = Number(key);
+          mergedCounts[numKey] = (mergedCounts[numKey] || 0) + count;
+        });
+
         setProjects(institutionProjects);
-        setSDGCounts(counts);
+        setSDGCounts(mergedCounts);
         setTotalStudents(studentsInSDGProjects);
+        setUniqueCourses(uniqueCourseIds.size);
+        setCourseSdgCounts(courseSDGCounts);
       } catch (error) {
         console.error('Error loading SDG data:', error);
       } finally {
@@ -74,6 +105,10 @@ export default function ManagementSDGDashboard() {
   }, [user?.tenant_id]);
 
   const activeSDGs = Object.keys(sdgCounts).map(Number).sort((a, b) => a - b);
+  const sdgProjectsCount = projects.filter(p => {
+    const goals = p.sdg_goals as number[] | null;
+    return goals && goals.length > 0;
+  }).length;
 
   // Prepare chart data
   const chartData = activeSDGs.map(num => {
@@ -116,7 +151,7 @@ export default function ManagementSDGDashboard() {
         </div>
 
         {/* Overview Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active SDGs</CardTitle>
@@ -130,12 +165,23 @@ export default function ManagementSDGDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
+              <CardTitle className="text-sm font-medium">SDG Projects</CardTitle>
               <FolderKanban className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{projects.length}</div>
+              <div className="text-2xl font-bold">{sdgProjectsCount}</div>
               <p className="text-xs text-muted-foreground">SDG-aligned projects</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">SDG Courses</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{Object.keys(courseSdgCounts).length > 0 ? Object.values(courseSdgCounts).reduce((a, b) => a + b, 0) : 0}</div>
+              <p className="text-xs text-muted-foreground">courses with SDG alignment</p>
             </CardContent>
           </Card>
 
@@ -146,7 +192,7 @@ export default function ManagementSDGDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalStudents}</div>
-              <p className="text-xs text-muted-foreground">across all projects</p>
+              <p className="text-xs text-muted-foreground">in SDG projects</p>
             </CardContent>
           </Card>
 
@@ -167,7 +213,7 @@ export default function ManagementSDGDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>SDG Distribution</CardTitle>
-              <CardDescription>Number of projects per SDG goal</CardDescription>
+              <CardDescription>Number of projects and courses per SDG goal</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -182,7 +228,7 @@ export default function ManagementSDGDashboard() {
                       borderRadius: '6px'
                     }}
                   />
-                  <Bar dataKey="projects" name="Projects">
+                  <Bar dataKey="projects" name="Projects & Courses">
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
@@ -197,13 +243,13 @@ export default function ManagementSDGDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Active SDG Goals</CardTitle>
-            <CardDescription>SDGs your institution is contributing to</CardDescription>
+            <CardDescription>SDGs your institution is contributing to through projects and courses</CardDescription>
           </CardHeader>
           <CardContent>
             {activeSDGs.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No SDG-aligned projects yet</p>
+                <p>No SDG-aligned projects or courses yet</p>
                 <p className="text-sm">Encourage students to create projects aligned with SDGs</p>
               </div>
             ) : (
@@ -226,7 +272,7 @@ export default function ManagementSDGDashboard() {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm">{sdg.title}</p>
                         <p className="text-xs text-muted-foreground">
-                          {sdgCounts[num]} project{sdgCounts[num] !== 1 ? 's' : ''}
+                          {sdgCounts[num]} item{sdgCounts[num] !== 1 ? 's' : ''}
                         </p>
                       </div>
                     </div>
