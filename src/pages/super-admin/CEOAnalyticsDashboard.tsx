@@ -171,18 +171,21 @@ export default function CEOAnalyticsDashboard() {
       const institutionStats: InstitutionStats[] = [];
       if (institutionListRes.data) {
         for (const inst of institutionListRes.data) {
-          const [studentsCount, classesCount, coursesCount] = await Promise.all([
+          const [studentsCount, classesCount, coursesAssignments] = await Promise.all([
             supabase.from('students').select('id', { count: 'exact', head: true }).eq('institution_id', inst.id),
             supabase.from('classes').select('id', { count: 'exact', head: true }).eq('institution_id', inst.id),
-            supabase.from('course_institution_assignments').select('id', { count: 'exact', head: true }).eq('institution_id', inst.id),
+            supabase.from('course_class_assignments').select('course_id').eq('institution_id', inst.id),
           ]);
+          
+          // Count unique courses (same course assigned to multiple classes counts once)
+          const uniqueCourseIds = new Set(coursesAssignments.data?.map(c => c.course_id) || []);
           
           institutionStats.push({
             id: inst.id,
             name: inst.name,
             studentCount: studentsCount.count || 0,
             classCount: classesCount.count || 0,
-            courseCount: coursesCount.count || 0,
+            courseCount: uniqueCourseIds.size,
           });
         }
       }
