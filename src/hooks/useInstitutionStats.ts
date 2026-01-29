@@ -148,8 +148,8 @@ export function useInstitutionStats(institutionSlug: string | undefined) {
           supabase.from('projects').select('*', { count: 'exact', head: true }).eq('institution_id', institutionId),
           // Active projects
           supabase.from('projects').select('*', { count: 'exact', head: true }).eq('institution_id', institutionId).eq('status', 'active'),
-          // Total courses assigned
-          supabase.from('course_institution_assignments').select('*', { count: 'exact', head: true }).eq('institution_id', institutionId),
+          // Total unique courses assigned to classes in this institution
+          supabase.from('course_class_assignments').select('course_id').eq('institution_id', institutionId),
           // Officers assigned to this institution
           supabase.from('officers').select('id, full_name, assigned_institutions').contains('assigned_institutions', [institutionId]),
           // Pending purchase requests
@@ -204,12 +204,16 @@ export function useInstitutionStats(institutionSlug: string | undefined) {
           }));
         }
 
+        // Count unique courses (same course assigned to multiple classes counts once)
+        const uniqueCourseIds = new Set(coursesResult.data?.map(c => c.course_id) || []);
+        const totalUniqueCourses = uniqueCourseIds.size;
+
         setStats({
           totalStudents: studentsResult.count || 0,
           totalClasses: classesResult.count || 0,
           totalProjects: projectsResult.count || 0,
           activeProjects: activeProjectsResult.count || 0,
-          totalCourses: coursesResult.count || 0,
+          totalCourses: totalUniqueCourses,
           totalOfficers: officers.length,
           officersOnLeave: officersOnLeaveDetails.length,
           officersOnLeaveDetails,
