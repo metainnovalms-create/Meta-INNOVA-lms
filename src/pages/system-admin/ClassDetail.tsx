@@ -9,14 +9,13 @@ import { ClassOverviewTab } from '@/components/institution/ClassOverviewTab';
 import { ClassStudentsTab } from '@/components/institution/ClassStudentsTab';
 import { ClassCoursesTab } from '@/components/institution/ClassCoursesTab';
 import { ClassAnalyticsTab } from '@/components/institution/ClassAnalyticsTab';
-import { getCourseAssignmentsByClass } from '@/data/mockClassCourseAssignments';
+import { useClassCourseAssignments } from '@/hooks/useClassCourseAssignments';
 import { useClassAnalytics } from '@/hooks/useClassAnalytics';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { useClasses } from '@/hooks/useClasses';
 import { useStudents } from '@/hooks/useStudents';
 import { useBulkImportStudents } from '@/hooks/useBulkImport';
 import { useIdCounter } from '@/hooks/useTimetable';
-import { ClassCourseAssignment } from '@/types/institution';
 import { Student, InstitutionClass } from '@/types/student';
 import { toast } from 'sonner';
 import { parseCSV, validateRow } from '@/utils/csvParser';
@@ -30,18 +29,10 @@ export default function ClassDetail() {
   const { bulkImport, progress, isImporting } = useBulkImportStudents(institutionId || '', classId || '');
   const { getNextId } = useIdCounter(institutionId);
   const { data: analytics, isLoading: isLoadingAnalytics } = useClassAnalytics(classId, institutionId);
-  
-  const [courseAssignments, setCourseAssignments] = useState<ClassCourseAssignment[]>([]);
+  const { data: dbCourseAssignments = [] } = useClassCourseAssignments(classId);
 
   const institution = institutions.find(inst => inst.id === institutionId);
   const classData = classesWithCounts.find(c => c.id === classId);
-
-  // Load mock data for courses (can be replaced with DB hooks later)
-  useState(() => {
-    if (classId) {
-      setCourseAssignments(getCourseAssignmentsByClass(classId));
-    }
-  });
 
   if (isLoadingClasses || isLoadingStudents) {
     return (
@@ -281,7 +272,7 @@ export default function ClassDetail() {
               studentCount={students.length}
               attendanceRate={analytics?.student_metrics.average_attendance_rate || 0}
               averageGrade={analytics?.academic_metrics.average_grade || 0}
-              activeCourses={courseAssignments.length}
+              activeCourses={dbCourseAssignments.length}
               onEditClass={() => {
                 navigate(`/system-admin/institutions/${institutionId}`);
                 toast.info('Redirecting to institution page to edit class');
@@ -305,41 +296,9 @@ export default function ClassDetail() {
             <ClassCoursesTab
               classId={classId!}
               classData={transformedClassData}
-              courseAssignments={courseAssignments}
-              onAssignCourse={async (assignment) => {
-                const newAssignment = {
-                  ...assignment,
-                  id: `assign-${Date.now()}`,
-                  course_thumbnail: '/placeholder.svg',
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                };
-                setCourseAssignments([...courseAssignments, newAssignment]);
-                toast.success('Course assigned successfully');
-              }}
-              onUpdateAssignment={async (assignmentId, data) => {
-                setCourseAssignments(courseAssignments.map(a => 
-                  a.id === assignmentId ? { ...a, ...data } : a
-                ));
-                toast.success('Assignment updated successfully');
-              }}
-              onRemoveAssignment={async (assignmentId) => {
-                setCourseAssignments(courseAssignments.filter(a => a.id !== assignmentId));
-                toast.success('Course assignment removed');
-              }}
-              onUnlockModule={async (assignmentId, moduleId) => {
-                setCourseAssignments(courseAssignments.map(assignment => {
-                  if (assignment.id === assignmentId) {
-                    return {
-                      ...assignment,
-                      assigned_modules: assignment.assigned_modules.map(module =>
-                        module.module_id === moduleId ? { ...module, is_unlocked: true } : module
-                      )
-                    };
-                  }
-                  return assignment;
-                }));
-                toast.success('Level unlocked successfully');
+              onAssignCourse={async () => {
+                // The ClassCoursesTab handles assignment internally via useAssignCourseToClass hook
+                // This prop is required by the interface but actual assignment is done by the dialog
               }}
             />
           </TabsContent>
