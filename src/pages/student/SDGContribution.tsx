@@ -21,21 +21,31 @@ export default function SDGContribution() {
       setLoading(true);
 
       try {
-        // Get projects where student is a member
-        const { data: memberProjects } = await supabase
-          .from('project_members')
-          .select('project_id')
-          .eq('student_id', user.id);
-
-        const projectIds = memberProjects?.map(m => m.project_id) || [];
+        // Step 1: Get student record from students table using auth user_id
+        const { data: studentRecord } = await supabase
+          .from('students')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
         let studentProjects: any[] = [];
-        if (projectIds.length > 0) {
-          const { data } = await supabase
-            .from('projects')
-            .select('id, title, sdg_goals, status, progress, category')
-            .in('id', projectIds);
-          studentProjects = data || [];
+        
+        if (studentRecord?.id) {
+          // Step 2: Get projects where student is a member using students.id
+          const { data: memberProjects } = await supabase
+            .from('project_members')
+            .select('project_id')
+            .eq('student_id', studentRecord.id);
+
+          const projectIds = memberProjects?.map(m => m.project_id) || [];
+
+          if (projectIds.length > 0) {
+            const { data } = await supabase
+              .from('projects')
+              .select('id, title, sdg_goals, status, progress, category')
+              .in('id', projectIds);
+            studentProjects = data || [];
+          }
         }
 
         // Get courses assigned to student's class
