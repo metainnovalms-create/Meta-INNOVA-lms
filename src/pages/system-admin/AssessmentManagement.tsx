@@ -18,6 +18,7 @@ import { DuplicateAssessmentDialog } from '@/components/assessment/DuplicateAsse
 import { CertificateSelector } from '@/components/gamification/CertificateSelector';
 import { ManualAssessmentEntry } from '@/components/assessment/ManualAssessmentEntry';
 import { CreateManualAssessment } from '@/components/assessment/CreateManualAssessment';
+import { EditManualAssessmentDialog } from '@/components/assessment/EditManualAssessmentDialog';
 import { AssessmentAnalytics } from '@/components/assessment/AssessmentAnalytics';
 import { assessmentService } from '@/services/assessment.service';
 import { Assessment, AssessmentQuestion, AssessmentPublishing } from '@/types/assessment';
@@ -63,6 +64,8 @@ export default function AssessmentManagement() {
   const [editingAssessment, setEditingAssessment] = useState<Assessment | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showCreateManual, setShowCreateManual] = useState(false);
+  const [editManualDialogOpen, setEditManualDialogOpen] = useState(false);
+  const [manualAssessmentToEdit, setManualAssessmentToEdit] = useState<Assessment | null>(null);
 
   // Load assessments from database
   useEffect(() => {
@@ -230,7 +233,21 @@ export default function AssessmentManagement() {
     setEditingAssessment(null);
   };
 
+  // Helper to detect if an assessment is manual (duration_minutes = 0)
+  const isManualAssessment = (assessment: Assessment): boolean => {
+    return assessment.duration_minutes === 0;
+  };
+
   const handleEditAssessment = async (assessment: Assessment) => {
+    // Check if this is a manual assessment
+    if (isManualAssessment(assessment)) {
+      // Open the manual assessment edit dialog
+      setManualAssessmentToEdit(assessment);
+      setEditManualDialogOpen(true);
+      return;
+    }
+
+    // Regular assessment edit flow
     setEditingAssessment(assessment);
     setTitle(assessment.title);
     setDescription(assessment.description);
@@ -708,6 +725,16 @@ export default function AssessmentManagement() {
         assessment={selectedAssessment}
         open={viewDialogOpen}
         onOpenChange={setViewDialogOpen}
+      />
+
+      <EditManualAssessmentDialog
+        open={editManualDialogOpen}
+        onOpenChange={setEditManualDialogOpen}
+        assessment={manualAssessmentToEdit}
+        onSaved={() => {
+          setManualAssessmentToEdit(null);
+          loadAssessments();
+        }}
       />
     </Layout>
   );
