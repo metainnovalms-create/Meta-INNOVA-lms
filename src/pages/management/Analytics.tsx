@@ -85,7 +85,7 @@ export default function ManagementAnalytics() {
           classes:class_id (class_name, section)
         `)
         .eq('institution_id', institutionId)
-        .in('status', ['completed', 'submitted', 'auto_submitted']);
+        .in('status', ['completed', 'submitted', 'auto_submitted', 'evaluated']);
 
       // Fetch assignment submissions with class info
       const { data: submissions } = await supabase
