@@ -77,7 +77,7 @@ export default function ManagementAssessments() {
           .from('assessment_attempts')
           .select('assessment_id, score, percentage, passed, status')
           .eq('institution_id', institutionId)
-          .in('status', ['completed', 'submitted', 'auto_submitted']);
+          .in('status', ['completed', 'submitted', 'auto_submitted', 'evaluated']);
 
         // Extract unique classes
         const classesMap = new Map<string, { id: string; name: string }>();
