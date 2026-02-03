@@ -146,7 +146,7 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
 
       // Build student performance map
       const studentPerformanceMap = new Map<string, StudentPerformance>();
-      const classMap = new Map(classes?.map(c => [c.id, c.class_name + (c.section ? ` ${c.section}` : '')]) || []);
+      const classMap = new Map(classes?.map(c => [c.id, c.class_name]) || []);
 
       students?.forEach(student => {
         const studentAssessments = assessmentAttempts?.filter(a => a.student_id === student.user_id) || [];
@@ -220,7 +220,7 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
         if (classStudents.length === 0) {
           classPerformance.push({
             class_id: cls.id,
-            class_name: cls.class_name + (cls.section ? ` ${cls.section}` : ''),
+            class_name: cls.class_name,
             total_students: 0,
             assessment_avg: 0,
             assessment_pass_rate: 0,
@@ -242,7 +242,7 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
 
         classPerformance.push({
           class_id: cls.id,
-          class_name: cls.class_name + (cls.section ? ` ${cls.section}` : ''),
+          class_name: cls.class_name,
           total_students: classStudents.length,
           assessment_avg: Math.round((classStudents.reduce((sum, s) => sum + s.assessment_avg, 0) / classStudents.length) * 10) / 10,
           assessment_pass_rate: Math.round((classStudents.reduce((sum, s) => sum + s.assessment_pass_rate, 0) / classStudents.length) * 10) / 10,
