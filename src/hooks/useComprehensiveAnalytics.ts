@@ -118,31 +118,59 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
         projectsData = projects || [];
       }
 
-      // Fetch course completions
-      let contentCompletions: { student_id: string; content_id: string }[] = [];
-      if (studentUserIds.length > 0) {
+      // Fetch course class assignments for this institution
+      const { data: courseAssignments } = await supabase
+        .from('course_class_assignments')
+        .select('id, course_id, class_id')
+        .eq('institution_id', institutionId);
+
+      const assignmentIds = courseAssignments?.map(ca => ca.id) || [];
+
+      // Fetch course completions using student record IDs (students.id, not user_id)
+      // student_content_completions stores student_id = students.id (record ID)
+      let contentCompletions: { student_id: string; content_id: string; class_assignment_id: string }[] = [];
+      if (studentRecordIds.length > 0 && assignmentIds.length > 0) {
         const { data: completions } = await supabase
           .from('student_content_completions')
-          .select('student_id, content_id')
-          .in('student_id', studentUserIds);
+          .select('student_id, content_id, class_assignment_id')
+          .in('student_id', studentRecordIds)
+          .in('class_assignment_id', assignmentIds);
         contentCompletions = completions || [];
       }
 
-      // Fetch total content count for institution courses
-      const { data: courseAssignments } = await supabase
-        .from('course_class_assignments')
-        .select('course_id')
-        .eq('institution_id', institutionId);
+      // Build a map of class_id -> total content count for assigned courses
+      // We need to count content per class based on what courses are assigned to each class
+      const classContentCountMap = new Map<string, number>();
       
-      const courseIds = [...new Set(courseAssignments?.map(ca => ca.course_id) || [])];
-      let totalContentCount = 0;
-      if (courseIds.length > 0) {
-        const { count } = await supabase
+      if (courseAssignments && courseAssignments.length > 0) {
+        // Get all unique course IDs
+        const courseIds = [...new Set(courseAssignments.map(ca => ca.course_id))];
+        
+        // Fetch content count per course
+        const { data: courseContent } = await supabase
           .from('course_content')
-          .select('id', { count: 'exact', head: true })
+          .select('id, course_id')
           .in('course_id', courseIds);
-        totalContentCount = count || 0;
+
+        // Build course -> content count map
+        const courseContentMap = new Map<string, number>();
+        courseContent?.forEach(cc => {
+          courseContentMap.set(cc.course_id, (courseContentMap.get(cc.course_id) || 0) + 1);
+        });
+
+        // For each class, sum up content from all assigned courses
+        for (const assignment of courseAssignments) {
+          const currentCount = classContentCountMap.get(assignment.class_id) || 0;
+          const courseContentCount = courseContentMap.get(assignment.course_id) || 0;
+          classContentCountMap.set(assignment.class_id, currentCount + courseContentCount);
+        }
       }
+
+      // Build a map of class_assignment_id -> class_id for lookup
+      const assignmentToClassMap = new Map(courseAssignments?.map(ca => [ca.id, ca.class_id]) || []);
+
+      // Build a map of student record ID -> class_id for lookup
+      const studentClassMap = new Map(students?.map(s => [s.id, s.class_id]) || []);
 
       // Build student performance map
       const studentPerformanceMap = new Map<string, StudentPerformance>();
@@ -154,7 +182,9 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
         const studentXp = xpData.filter(x => x.student_id === student.user_id);
         const studentBadges = badgesData.filter(b => b.student_id === student.user_id);
         const studentProjects = projectsData.filter(p => p.student_id === student.id);
-        const studentCompletions = contentCompletions.filter(c => c.student_id === student.user_id);
+        
+        // Filter completions using student record ID (students.id)
+        const studentCompletions = contentCompletions.filter(c => c.student_id === student.id);
 
         // Calculate assessment metrics
         const assessmentAvg = studentAssessments.length > 0
@@ -178,9 +208,13 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
         const totalXp = studentXp.reduce((sum, x) => sum + x.points_earned, 0);
         const badgesCount = new Set(studentBadges.map(b => b.badge_id)).size;
         const projectsCount = new Set(studentProjects.map(p => p.project_id)).size;
+        
+        // Calculate course completion based on class-specific content count
+        const studentClassId = student.class_id;
+        const classContentCount = classContentCountMap.get(studentClassId) || 0;
         const completionsCount = new Set(studentCompletions.map(c => c.content_id)).size;
-        const courseCompletion = totalContentCount > 0 
-          ? (completionsCount / totalContentCount) * 100 
+        const courseCompletion = classContentCount > 0 
+          ? (completionsCount / classContentCount) * 100 
           : 0;
 
         // Calculate overall score (weighted average)
