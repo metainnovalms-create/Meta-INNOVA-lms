@@ -299,12 +299,24 @@ export function EditManualAssessmentDialog({
       }
 
       // Update or create student attempts
+      let hasErrors = false;
+      
       for (const attempt of studentAttempts) {
         const percentage = totalMarks > 0 ? (attempt.score / totalMarks) * 100 : 0;
 
+        console.log('Saving attempt:', {
+          isNew: attempt.id.startsWith('new-'),
+          attemptId: attempt.id,
+          studentId: attempt.student_id,
+          studentName: attempt.student_name,
+          score: attempt.score,
+          institutionId: selectedInstitutionId,
+          classId: selectedClassId
+        });
+
         if (attempt.id.startsWith('new-')) {
           // Create new attempt for this student
-          const { error: insertError } = await supabase
+          const { data: insertData, error: insertError } = await supabase
             .from('assessment_attempts')
             .insert({
               assessment_id: assessment.id,
@@ -320,14 +332,18 @@ export function EditManualAssessmentDialog({
               is_manual: true,
               started_at: new Date().toISOString(),
               submitted_at: new Date().toISOString()
-            });
+            })
+            .select();
 
           if (insertError) {
             console.error(`Error creating attempt for ${attempt.student_name}:`, insertError);
+            hasErrors = true;
+          } else {
+            console.log('Successfully created attempt:', insertData);
           }
         } else {
           // Update existing attempt
-          const { error: attemptError } = await supabase
+          const { data: updateData, error: attemptError } = await supabase
             .from('assessment_attempts')
             .update({
               score: attempt.score,
@@ -337,15 +353,23 @@ export function EditManualAssessmentDialog({
               manual_notes: attempt.notes,
               status: attempt.is_absent ? 'absent' : 'evaluated'
             })
-            .eq('id', attempt.id);
+            .eq('id', attempt.id)
+            .select();
 
           if (attemptError) {
             console.error(`Error updating attempt ${attempt.id}:`, attemptError);
+            hasErrors = true;
+          } else {
+            console.log('Successfully updated attempt:', updateData);
           }
         }
       }
 
-      toast.success('Manual assessment updated successfully');
+      if (hasErrors) {
+        toast.error('Some attempts failed to save. Check console for details.');
+      } else {
+        toast.success('Manual assessment updated successfully');
+      }
       onSaved();
       onOpenChange(false);
     } catch (error: any) {
