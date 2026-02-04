@@ -126,60 +126,64 @@ export function EditManualAssessmentDialog({
       // Get class ID from assignment
       const classId = assignmentData?.class_id || selectedClassId;
 
-      // Load existing attempts with student names
-      const { data: attemptsData, error: attemptsError } = await supabase
-        .from('assessment_attempts')
-        .select(`
-          id,
-          student_id,
-          score,
-          passed,
-          manual_notes,
-          status
-        `)
-        .eq('assessment_id', assessment.id);
-
-      console.log('Attempts loaded:', attemptsData, 'Error:', attemptsError);
-
-      if (attemptsData && attemptsData.length > 0) {
-        // Get student names from profiles
-        const studentIds = attemptsData.map(a => a.student_id);
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id, name')
-          .in('id', studentIds);
-
-        const profileMap = new Map(profilesData?.map(p => [p.id, p.name]) || []);
-
-        setStudentAttempts(attemptsData.map(attempt => ({
-          id: attempt.id,
-          student_id: attempt.student_id,
-          student_name: profileMap.get(attempt.student_id) || 'Unknown Student',
-          score: attempt.score,
-          passed: attempt.passed,
-          notes: attempt.manual_notes || '',
-          is_absent: attempt.status === 'absent'
-        })));
-      } else if (classId) {
-        // No existing attempts - load students from class to allow entering scores
+      if (classId) {
+        // ALWAYS load current students from class first
         const { data: studentsData } = await supabase
           .from('students')
           .select('id, student_name, user_id')
           .eq('class_id', classId)
           .eq('status', 'active');
 
-        if (studentsData && studentsData.length > 0) {
-          // These students don't have attempts yet - we'll need to create them on save
-          setStudentAttempts(studentsData.map(student => ({
-            id: `new-${student.user_id || student.id}`, // Mark as new
-            student_id: student.user_id || student.id,
-            student_name: student.student_name,
-            score: 0,
-            passed: false,
-            notes: '',
-            is_absent: false
-          })));
-        }
+        // Load existing attempts for this assessment
+        const { data: attemptsData, error: attemptsError } = await supabase
+          .from('assessment_attempts')
+          .select(`
+            id,
+            student_id,
+            score,
+            passed,
+            manual_notes,
+            status
+          `)
+          .eq('assessment_id', assessment.id);
+
+        console.log('Students loaded:', studentsData?.length, 'Attempts loaded:', attemptsData?.length, 'Error:', attemptsError);
+
+        // Create a map of existing attempts by student_id for quick lookup
+        const attemptMap = new Map(
+          (attemptsData || []).map(a => [a.student_id, a])
+        );
+
+        // Merge: All current students with their attempts (or blank for new students)
+        const mergedAttempts = (studentsData || []).map(student => {
+          const studentUserId = student.user_id || student.id;
+          const existingAttempt = attemptMap.get(studentUserId);
+
+          if (existingAttempt) {
+            return {
+              id: existingAttempt.id,
+              student_id: studentUserId,
+              student_name: student.student_name,
+              score: existingAttempt.score,
+              passed: existingAttempt.passed,
+              notes: existingAttempt.manual_notes || '',
+              is_absent: existingAttempt.status === 'absent'
+            };
+          } else {
+            // New student without an attempt - will be created on save
+            return {
+              id: `new-${studentUserId}`,
+              student_id: studentUserId,
+              student_name: student.student_name,
+              score: 0,
+              passed: false,
+              notes: '',
+              is_absent: false
+            };
+          }
+        });
+
+        setStudentAttempts(mergedAttempts);
       }
     } catch (error) {
       console.error('Error loading data:', error);
