@@ -893,6 +893,88 @@ export type Database = {
           },
         ]
       }
+      class_assessment_mapping: {
+        Row: {
+          academic_year: string
+          class_id: string
+          created_at: string | null
+          created_by: string | null
+          fa1_assessment_id: string | null
+          fa2_assessment_id: string | null
+          final_assessment_id: string | null
+          id: string
+          institution_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          academic_year?: string
+          class_id: string
+          created_at?: string | null
+          created_by?: string | null
+          fa1_assessment_id?: string | null
+          fa2_assessment_id?: string | null
+          final_assessment_id?: string | null
+          id?: string
+          institution_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          academic_year?: string
+          class_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          fa1_assessment_id?: string | null
+          fa2_assessment_id?: string | null
+          final_assessment_id?: string | null
+          id?: string
+          institution_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_assessment_mapping_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_assessment_mapping_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_assessment_mapping_fa1_assessment_id_fkey"
+            columns: ["fa1_assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_assessment_mapping_fa2_assessment_id_fkey"
+            columns: ["fa2_assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_assessment_mapping_final_assessment_id_fkey"
+            columns: ["final_assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_assessment_mapping_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_module_assignments: {
         Row: {
           class_assignment_id: string
@@ -2635,6 +2717,77 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      internal_assessment_marks: {
+        Row: {
+          academic_year: string
+          class_id: string
+          created_at: string | null
+          entered_by: string | null
+          id: string
+          institution_id: string
+          marks_obtained: number
+          notes: string | null
+          student_id: string
+          total_marks: number
+          updated_at: string | null
+        }
+        Insert: {
+          academic_year?: string
+          class_id: string
+          created_at?: string | null
+          entered_by?: string | null
+          id?: string
+          institution_id: string
+          marks_obtained?: number
+          notes?: string | null
+          student_id: string
+          total_marks?: number
+          updated_at?: string | null
+        }
+        Update: {
+          academic_year?: string
+          class_id?: string
+          created_at?: string | null
+          entered_by?: string | null
+          id?: string
+          institution_id?: string
+          marks_obtained?: number
+          notes?: string | null
+          student_id?: string
+          total_marks?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internal_assessment_marks_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "internal_assessment_marks_entered_by_fkey"
+            columns: ["entered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "internal_assessment_marks_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "internal_assessment_marks_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       interview_feedback: {
         Row: {
