@@ -185,7 +185,7 @@ export const InstitutionClassesTab = ({
         </div>
       )}
 
-      {/* Assessment Mapping Dialog */}
+      {/* Assessment Mapping Dialog session */}
       {selectedClass && (
         <ClassAssessmentMappingDialog
           open={mappingDialogOpen}
