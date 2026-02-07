@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AssessmentStatusBadge } from '@/components/assessment/AssessmentStatusBadge';
 import { QuestionBuilder } from '@/components/assessment/QuestionBuilder';
 import { QuestionList } from '@/components/assessment/QuestionList';
@@ -15,12 +16,17 @@ import { PublishingSelector } from '@/components/assessment/PublishingSelector';
 import { ManualAssessmentEntry } from '@/components/assessment/ManualAssessmentEntry';
 import { CreateManualAssessment } from '@/components/assessment/CreateManualAssessment';
 import { AssessmentAnalytics } from '@/components/assessment/AssessmentAnalytics';
+import { ClassAssessmentMappingDialog } from '@/components/assessment/ClassAssessmentMappingDialog';
+import { InternalMarksEntry } from '@/components/assessment/InternalMarksEntry';
+import { WeightedAssessmentView } from '@/components/analytics/WeightedAssessmentView';
 import { assessmentService } from '@/services/assessment.service';
 import { Assessment, AssessmentQuestion, AssessmentPublishing } from '@/types/assessment';
 import { getAssessmentStatus, formatDuration, calculateTotalPoints, formatDateTimeLocal, parseLocalToUTC } from '@/utils/assessmentHelpers';
-import { Search, Plus, Clock, Award, Users, FileText, Eye, Edit, Trash2, Loader2, ClipboardEdit, BarChart3, PlusCircle } from 'lucide-react';
+import { Search, Plus, Clock, Award, Users, FileText, Eye, Edit, Trash2, Loader2, ClipboardEdit, BarChart3, PlusCircle, Settings2, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 export default function OfficerAssessmentManagement() {
   const { user } = useAuth();
@@ -32,6 +38,29 @@ export default function OfficerAssessmentManagement() {
   const [isSaving, setIsSaving] = useState(false);
   
   const officerInstitutionId = user?.institution_id || user?.tenant_id;
+  
+  // Assessment Mapping State
+  const [selectedClassForMapping, setSelectedClassForMapping] = useState<{ id: string; name: string } | null>(null);
+  const [mappingDialogOpen, setMappingDialogOpen] = useState(false);
+  const [internalMarksClass, setInternalMarksClass] = useState<{ id: string; name: string } | null>(null);
+  const [weightedViewClass, setWeightedViewClass] = useState<{ id: string; name: string } | null>(null);
+  
+  // Fetch classes for this institution
+  const { data: classes } = useQuery({
+    queryKey: ['officer-classes', officerInstitutionId],
+    queryFn: async () => {
+      if (!officerInstitutionId) return [];
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, class_name, section, status')
+        .eq('institution_id', officerInstitutionId)
+        .eq('status', 'active')
+        .order('class_name');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!officerInstitutionId,
+  });
   
   // Create Assessment State
   const [step, setStep] = useState(1);
@@ -269,8 +298,9 @@ export default function OfficerAssessmentManagement() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="all">All Assessments</TabsTrigger>
+            <TabsTrigger value="mapping">Assessment Mapping</TabsTrigger>
             <TabsTrigger value="create">Create Assessment</TabsTrigger>
           </TabsList>
 
@@ -436,12 +466,107 @@ export default function OfficerAssessmentManagement() {
             )}
           </TabsContent>
 
+          {/* Assessment Mapping Tab */}
+          <TabsContent value="mapping" className="space-y-6">
+            {internalMarksClass ? (
+              <InternalMarksEntry
+                classId={internalMarksClass.id}
+                className={internalMarksClass.name}
+                institutionId={officerInstitutionId || ''}
+                onBack={() => setInternalMarksClass(null)}
+              />
+            ) : weightedViewClass ? (
+              <div className="space-y-4">
+                <Button variant="ghost" onClick={() => setWeightedViewClass(null)}>
+                  ← Back to Classes
+                </Button>
+                <WeightedAssessmentView
+                  classId={weightedViewClass.id}
+                  className={weightedViewClass.name}
+                  institutionId={officerInstitutionId || ''}
+                />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings2 className="h-5 w-5" />
+                      Assessment Weightage Mapping
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground mb-4">
+                      Map assessments to weightage categories (FA1: 20%, FA2: 20%, Final: 40%, Internal: 20%) for each class.
+                    </p>
+                    
+                    {!classes || classes.length === 0 ? (
+                      <p className="text-center py-8 text-muted-foreground">
+                        No active classes found for this institution.
+                      </p>
+                    ) : (
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {classes.map((cls) => (
+                          <Card key={cls.id} className="hover:shadow-md transition-shadow">
+                            <CardContent className="pt-6 space-y-4">
+                              <div className="font-medium">{cls.class_name}</div>
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedClassForMapping({ id: cls.id, name: cls.class_name });
+                                    setMappingDialogOpen(true);
+                                  }}
+                                >
+                                  <Settings2 className="h-3 w-3 mr-1" />
+                                  Map Assessments
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setInternalMarksClass({ id: cls.id, name: cls.class_name })}
+                                >
+                                  <ClipboardEdit className="h-3 w-3 mr-1" />
+                                  Internal Marks
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setWeightedViewClass({ id: cls.id, name: cls.class_name })}
+                                >
+                                  <TrendingUp className="h-3 w-3 mr-1" />
+                                  Weighted Scores
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Mapping Dialog */}
+                {selectedClassForMapping && (
+                  <ClassAssessmentMappingDialog
+                    open={mappingDialogOpen}
+                    onOpenChange={setMappingDialogOpen}
+                    classId={selectedClassForMapping.id}
+                    className={selectedClassForMapping.name}
+                    institutionId={officerInstitutionId || ''}
+                  />
+                )}
+              </div>
+            )}
+          </TabsContent>
+
           <TabsContent value="create" className="space-y-6">
             {editingAssessment && (
-              <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+              <Card className="bg-muted border-border">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <p className="text-sm text-muted-foreground">
                       Editing: <strong>{editingAssessment.title}</strong>
                     </p>
                     <Button variant="outline" size="sm" onClick={resetForm}>
