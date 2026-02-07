@@ -22,7 +22,7 @@ import { WeightedAssessmentView } from '@/components/analytics/WeightedAssessmen
 import { assessmentService } from '@/services/assessment.service';
 import { Assessment, AssessmentQuestion, AssessmentPublishing } from '@/types/assessment';
 import { getAssessmentStatus, formatDuration, calculateTotalPoints, formatDateTimeLocal, parseLocalToUTC } from '@/utils/assessmentHelpers';
-import { Search, Plus, Clock, Award, Users, FileText, Eye, Edit, Trash2, Loader2, ClipboardEdit, BarChart3, PlusCircle, Settings2, TrendingUp } from 'lucide-react';
+import { Search,Plus, Clock, Award, Users, FileText, Eye, Edit, Trash2, Loader2, ClipboardEdit, BarChart3, PlusCircle, Settings2, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
