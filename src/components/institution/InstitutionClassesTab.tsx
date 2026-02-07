@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Users, BookOpen } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, BookOpen, Settings2, ClipboardEdit } from 'lucide-react';
 import { InstitutionClass } from '@/types/student';
+import { ClassAssessmentMappingDialog } from '@/components/assessment/ClassAssessmentMappingDialog';
+import { InternalMarksEntry } from '@/components/assessment/InternalMarksEntry';
 
 interface InstitutionClassesTabProps {
   institutionId: string;
@@ -15,6 +18,7 @@ interface InstitutionClassesTabProps {
 }
 
 export const InstitutionClassesTab = ({
+  institutionId,
   institutionClasses,
   studentCounts,
   onAddClass,
@@ -22,6 +26,34 @@ export const InstitutionClassesTab = ({
   onDeleteClass,
   onSelectClass
 }: InstitutionClassesTabProps) => {
+  const [mappingDialogOpen, setMappingDialogOpen] = useState(false);
+  const [internalMarksOpen, setInternalMarksOpen] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<InstitutionClass | null>(null);
+
+  const handleOpenMapping = (classItem: InstitutionClass) => {
+    setSelectedClass(classItem);
+    setMappingDialogOpen(true);
+  };
+
+  const handleOpenInternalMarks = (classItem: InstitutionClass) => {
+    setSelectedClass(classItem);
+    setInternalMarksOpen(true);
+  };
+
+  if (internalMarksOpen && selectedClass) {
+    return (
+      <InternalMarksEntry
+        classId={selectedClass.id}
+        className={selectedClass.class_name}
+        institutionId={institutionId}
+        onBack={() => {
+          setInternalMarksOpen(false);
+          setSelectedClass(null);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -98,11 +130,34 @@ export const InstitutionClassesTab = ({
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex flex-wrap items-center gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenMapping(classItem);
+                      }}
+                      title="Map Assessments to Weightage Categories"
+                    >
+                      <Settings2 className="h-3 w-3 mr-1" />
+                      Mapping
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenInternalMarks(classItem);
+                      }}
+                      title="Enter Internal Assessment Marks"
+                    >
+                      <ClipboardEdit className="h-3 w-3 mr-1" />
+                      Internal
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         onEditClass(classItem);
@@ -114,7 +169,6 @@ export const InstitutionClassesTab = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
                       onClick={(e) => {
                         e.stopPropagation();
                         onDeleteClass(classItem.id);
@@ -129,6 +183,17 @@ export const InstitutionClassesTab = ({
             );
           })}
         </div>
+      )}
+
+      {/* Assessment Mapping Dialog */}
+      {selectedClass && (
+        <ClassAssessmentMappingDialog
+          open={mappingDialogOpen}
+          onOpenChange={setMappingDialogOpen}
+          classId={selectedClass.id}
+          className={selectedClass.class_name}
+          institutionId={institutionId}
+        />
       )}
     </div>
   );
