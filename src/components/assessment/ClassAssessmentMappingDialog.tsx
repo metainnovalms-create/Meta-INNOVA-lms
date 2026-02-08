@@ -75,6 +75,10 @@ export function ClassAssessmentMappingDialog({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assessment Mapping - {className}</DialogTitle>
+            <DialogDescription>Loading assessment data...</DialogDescription>
+          </DialogHeader>
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
