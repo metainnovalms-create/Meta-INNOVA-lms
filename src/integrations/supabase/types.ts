@@ -1386,6 +1386,62 @@ export type Database = {
         }
         Relationships: []
       }
+      company_item_master: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          created_by: string | null
+          current_stock: number
+          description: string | null
+          gst_percentage: number | null
+          id: string
+          item_code: string
+          item_name: string
+          reorder_level: number | null
+          status: string
+          unit_of_measure: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_stock?: number
+          description?: string | null
+          gst_percentage?: number | null
+          id?: string
+          item_code: string
+          item_name: string
+          reorder_level?: number | null
+          status?: string
+          unit_of_measure?: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_stock?: number
+          description?: string | null
+          gst_percentage?: number | null
+          id?: string
+          item_code?: string
+          item_name?: string
+          reorder_level?: number | null
+          status?: string
+          unit_of_measure?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_item_master_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_profiles: {
         Row: {
           address: string | null
@@ -1493,6 +1549,204 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      company_stock_entries: {
+        Row: {
+          amount: number | null
+          batch_serial: string | null
+          created_at: string | null
+          created_by: string | null
+          entry_date: string
+          id: string
+          invoice_date: string | null
+          invoice_number: string | null
+          item_id: string
+          location_store: string | null
+          notes: string | null
+          quantity: number
+          rate: number
+          supplier_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          batch_serial?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          entry_date?: string
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string | null
+          item_id: string
+          location_store?: string | null
+          notes?: string | null
+          quantity: number
+          rate?: number
+          supplier_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          batch_serial?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          entry_date?: string
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string | null
+          item_id?: string
+          location_store?: string | null
+          notes?: string | null
+          quantity?: number
+          rate?: number
+          supplier_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_stock_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_stock_entries_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "company_item_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_stock_entries_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "company_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_stock_issues: {
+        Row: {
+          admin_override: boolean | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          issue_date: string
+          issued_to_id: string | null
+          issued_to_name: string
+          issued_to_type: string
+          item_id: string
+          notes: string | null
+          purpose: string | null
+          quantity: number
+          reference_number: string | null
+        }
+        Insert: {
+          admin_override?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          issue_date?: string
+          issued_to_id?: string | null
+          issued_to_name: string
+          issued_to_type: string
+          item_id: string
+          notes?: string | null
+          purpose?: string | null
+          quantity: number
+          reference_number?: string | null
+        }
+        Update: {
+          admin_override?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          issue_date?: string
+          issued_to_id?: string | null
+          issued_to_name?: string
+          issued_to_type?: string
+          item_id?: string
+          notes?: string | null
+          purpose?: string | null
+          quantity?: number
+          reference_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_stock_issues_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_stock_issues_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "company_item_master"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_suppliers: {
+        Row: {
+          address: string | null
+          city: string | null
+          contact_person: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          gstin: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          pincode: string | null
+          state: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          gstin?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          pincode?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          gstin?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          pincode?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_suppliers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       course_class_assignments: {
         Row: {
@@ -6795,6 +7049,10 @@ export type Database = {
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_company_inventory_access: {
+        Args: { _user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
