@@ -36,6 +36,7 @@ const allFeatures: { value: SystemAdminFeature; label: string }[] = [
   { value: 'officer_management', label: 'Officer Management' },
   { value: 'project_management', label: 'Project Management' },
   { value: 'inventory_management', label: 'Inventory Management' },
+  { value: 'company_inventory', label: 'Company Inventory' },
   { value: 'attendance_payroll', label: 'Attendance and Payroll' },
   { value: 'leave_approvals', label: 'Leave Approvals' },
   { value: 'leave_management', label: 'Leave Management' },
