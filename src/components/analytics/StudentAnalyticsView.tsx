@@ -69,11 +69,11 @@ export function StudentAnalyticsView({ classes }: StudentAnalyticsViewProps) {
   };
 
   const radarData = selectedStudent ? [
-    { metric: 'Assessments', value: selectedStudent.assessment_avg, fullMark: 100 },
-    { metric: 'Pass Rate', value: selectedStudent.assessment_pass_rate, fullMark: 100 },
-    { metric: 'Assignments', value: selectedStudent.assignment_avg, fullMark: 100 },
+    { metric: 'FA1 (20%)', value: (selectedStudent.weighted_assessment?.fa1_score || 0) * 5, fullMark: 100 },
+    { metric: 'FA2 (20%)', value: (selectedStudent.weighted_assessment?.fa2_score || 0) * 5, fullMark: 100 },
+    { metric: 'Final (40%)', value: (selectedStudent.weighted_assessment?.final_score || 0) * 2.5, fullMark: 100 },
+    { metric: 'Internal (20%)', value: (selectedStudent.weighted_assessment?.internal_score || 0) * 5, fullMark: 100 },
     { metric: 'Course Progress', value: selectedStudent.course_completion, fullMark: 100 },
-    { metric: 'XP Score', value: Math.min(selectedStudent.total_xp / 10, 100), fullMark: 100 },
   ] : [];
 
   return (
@@ -82,7 +82,7 @@ export function StudentAnalyticsView({ classes }: StudentAnalyticsViewProps) {
       <div>
         <h3 className="text-lg font-semibold">Individual Student Analytics</h3>
         <p className="text-sm text-muted-foreground">
-          Detailed performance metrics for each student
+          Detailed performance metrics for each student (Weighted Assessment: FA1 20% + FA2 20% + Final 40% + Internal 20%)
         </p>
       </div>
 
@@ -157,7 +157,10 @@ export function StudentAnalyticsView({ classes }: StudentAnalyticsViewProps) {
                         </div>
                       </div>
                       <div className="flex items-center gap-4 text-sm">
-                        <span className="font-semibold">{student.overall_score}</span>
+                        <div className="text-right">
+                          <span className="font-semibold">{student.weighted_assessment?.total_weighted || 0}%</span>
+                          <p className="text-xs text-muted-foreground">Weighted</p>
+                        </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </div>
                     </div>
@@ -214,34 +217,57 @@ export function StudentAnalyticsView({ classes }: StudentAnalyticsViewProps) {
                 </CardHeader>
               </Card>
 
-              {/* Metrics Grid */}
+              {/* Weighted Assessment Breakdown */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4" />
+                    Weighted Assessment Breakdown
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium">FA1 (20%)</span>
+                        <span className="text-sm font-bold text-blue-600">{selectedStudent.weighted_assessment?.fa1_score || 0}</span>
+                      </div>
+                      <Progress value={(selectedStudent.weighted_assessment?.fa1_score || 0) * 5} className="h-1.5" />
+                    </div>
+                    <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium">FA2 (20%)</span>
+                        <span className="text-sm font-bold text-green-600">{selectedStudent.weighted_assessment?.fa2_score || 0}</span>
+                      </div>
+                      <Progress value={(selectedStudent.weighted_assessment?.fa2_score || 0) * 5} className="h-1.5" />
+                    </div>
+                    <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium">Final (40%)</span>
+                        <span className="text-sm font-bold text-purple-600">{selectedStudent.weighted_assessment?.final_score || 0}</span>
+                      </div>
+                      <Progress value={(selectedStudent.weighted_assessment?.final_score || 0) * 2.5} className="h-1.5" />
+                    </div>
+                    <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium">Internal (20%)</span>
+                        <span className="text-sm font-bold text-orange-600">{selectedStudent.weighted_assessment?.internal_score || 0}</span>
+                      </div>
+                      <Progress value={(selectedStudent.weighted_assessment?.internal_score || 0) * 5} className="h-1.5" />
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Total Weighted Score</span>
+                      <span className="text-xl font-bold text-primary">{selectedStudent.weighted_assessment?.total_weighted || 0}%</span>
+                    </div>
+                    <Progress value={selectedStudent.weighted_assessment?.total_weighted || 0} className="mt-2 h-2" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Other Metrics Grid */}
               <div className="grid gap-3 grid-cols-2">
-                <Card>
-                  <CardContent className="pt-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Assessment Avg</span>
-                      </div>
-                      <span className="font-bold">{selectedStudent.assessment_avg}%</span>
-                    </div>
-                    <Progress value={selectedStudent.assessment_avg} className="mt-2 h-1.5" />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="pt-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4 text-green-500" />
-                        <span className="text-sm">Pass Rate</span>
-                      </div>
-                      <span className="font-bold">{selectedStudent.assessment_pass_rate}%</span>
-                    </div>
-                    <Progress value={selectedStudent.assessment_pass_rate} className="mt-2 h-1.5" />
-                  </CardContent>
-                </Card>
-
                 <Card>
                   <CardContent className="pt-4">
                     <div className="flex items-center justify-between">
