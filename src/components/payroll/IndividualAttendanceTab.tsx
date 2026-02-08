@@ -1007,12 +1007,12 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
                   <CardContent className="pt-4 text-center">
                     <Timer className="h-5 w-5 mx-auto text-indigo-500 mb-1" />
                     <p className="text-2xl font-bold text-indigo-600">
-                      {stats?.totalOvertime.toFixed(1)}h
+                      {(stats?.approvedOvertime || 0).toFixed(1)}h
                       {(stats?.pendingOvertimeCount || 0) > 0 && (
-                        <span className="text-xs text-orange-500 ml-1">({stats?.pendingOvertimeCount})</span>
+                        <span className="text-xs text-orange-500 ml-1">({stats?.pendingOvertimeCount} pending)</span>
                       )}
                     </p>
-                    <p className="text-xs text-muted-foreground">Overtime</p>
+                    <p className="text-xs text-muted-foreground">Approved Overtime</p>
                   </CardContent>
                 </Card>
               </div>
@@ -1261,18 +1261,25 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
                                 )}
                               </TableCell>
                               <TableCell className="text-center">
-                                {(record.status === 'present' || record.status === 'late' || record.status === 'unmarked') && (
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7"
-                                    onClick={() => openCorrectionDialog(record)}
-                                  >
-                                    <Edit2 className="h-4 w-4" />
-                                  </Button>
+                                {/* Show edit button for present, late, unmarked, or leave statuses - always allow re-editing */}
+                                {(record.status === 'present' || record.status === 'late' || record.status === 'unmarked' || record.status === 'leave') && (
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7"
+                                      onClick={() => openCorrectionDialog(record)}
+                                    >
+                                      <Edit2 className="h-4 w-4" />
+                                    </Button>
+                                    {record.is_manual_correction && (
+                                      <Badge variant="outline" className="text-xs">Edited</Badge>
+                                    )}
+                                  </div>
                                 )}
-                                {record.is_manual_correction && (
-                                  <Badge variant="outline" className="text-xs ml-1">Edited</Badge>
+                                {/* For weekend/holiday, only show Edited badge if manually corrected */}
+                                {(record.status === 'weekend' || record.status === 'holiday') && record.is_manual_correction && (
+                                  <Badge variant="outline" className="text-xs">Edited</Badge>
                                 )}
                               </TableCell>
                             </TableRow>
