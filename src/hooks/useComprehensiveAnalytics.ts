@@ -1,5 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { calculateWeightedScore, WEIGHTAGE } from '@/utils/assessmentWeightageCalculator';
+import { AssessmentAttempt } from '@/types/assessment';
+
+export interface WeightedAssessmentBreakdown {
+  fa1_score: number;
+  fa2_score: number;
+  final_score: number;
+  internal_score: number;
+  total_weighted: number;
+}
 
 export interface StudentPerformance {
   student_id: string;
@@ -16,6 +26,7 @@ export interface StudentPerformance {
   course_completion: number;
   overall_score: number;
   rank?: number;
+  weighted_assessment?: WeightedAssessmentBreakdown;
 }
 
 export interface ClassPerformance {
@@ -32,6 +43,7 @@ export interface ClassPerformance {
   overall_score: number;
   topStudents: StudentPerformance[];
   allStudents: StudentPerformance[];
+  weighted_assessment?: WeightedAssessmentBreakdown;
 }
 
 export interface InstitutionPerformance {
@@ -47,6 +59,7 @@ export interface InstitutionPerformance {
   topStudents: StudentPerformance[];
   allStudents: StudentPerformance[];
   classPerformance: ClassPerformance[];
+  weighted_assessment?: WeightedAssessmentBreakdown;
 }
 
 export function useComprehensiveAnalytics(institutionId: string | undefined) {
@@ -69,12 +82,23 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
         .eq('institution_id', institutionId)
         .eq('status', 'active');
 
+      // Fetch class assessment mappings for this institution
+      const { data: assessmentMappings } = await supabase
+        .from('class_assessment_mapping')
+        .select('*')
+        .eq('institution_id', institutionId);
+
+      // Fetch internal assessment marks
+      const { data: internalMarks } = await supabase
+        .from('internal_assessment_marks')
+        .select('*')
+        .eq('institution_id', institutionId);
+
       // Fetch assessment attempts
       const { data: assessmentAttempts } = await supabase
         .from('assessment_attempts')
-        .select('student_id, class_id, percentage, passed, score, total_points')
-        .eq('institution_id', institutionId)
-        .in('status', ['completed', 'submitted', 'auto_submitted', 'evaluated']);
+        .select('id, student_id, class_id, assessment_id, percentage, passed, score, total_points, status')
+        .eq('institution_id', institutionId);
 
       // Fetch assignment submissions
       const { data: assignmentSubmissions } = await supabase
@@ -127,7 +151,6 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
       const assignmentIds = courseAssignments?.map(ca => ca.id) || [];
 
       // Fetch course completions using student record IDs (students.id, not user_id)
-      // student_content_completions stores student_id = students.id (record ID)
       let contentCompletions: { student_id: string; content_id: string; class_assignment_id: string }[] = [];
       if (studentRecordIds.length > 0 && assignmentIds.length > 0) {
         const { data: completions } = await supabase
@@ -139,26 +162,21 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
       }
 
       // Build a map of class_id -> total content count for assigned courses
-      // We need to count content per class based on what courses are assigned to each class
       const classContentCountMap = new Map<string, number>();
       
       if (courseAssignments && courseAssignments.length > 0) {
-        // Get all unique course IDs
         const courseIds = [...new Set(courseAssignments.map(ca => ca.course_id))];
         
-        // Fetch content count per course
         const { data: courseContent } = await supabase
           .from('course_content')
           .select('id, course_id')
           .in('course_id', courseIds);
 
-        // Build course -> content count map
         const courseContentMap = new Map<string, number>();
         courseContent?.forEach(cc => {
           courseContentMap.set(cc.course_id, (courseContentMap.get(cc.course_id) || 0) + 1);
         });
 
-        // For each class, sum up content from all assigned courses
         for (const assignment of courseAssignments) {
           const currentCount = classContentCountMap.get(assignment.class_id) || 0;
           const courseContentCount = courseContentMap.get(assignment.course_id) || 0;
@@ -166,33 +184,106 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
         }
       }
 
-      // Build a map of class_assignment_id -> class_id for lookup
-      const assignmentToClassMap = new Map(courseAssignments?.map(ca => [ca.id, ca.class_id]) || []);
-
-      // Build a map of student record ID -> class_id for lookup
+      // Build maps for lookups
       const studentClassMap = new Map(students?.map(s => [s.id, s.class_id]) || []);
+      const classMappingMap = new Map(assessmentMappings?.map(m => [m.class_id, m]) || []);
+      
+      // Helper function to get weighted assessment for a student
+      const getStudentWeightedAssessment = (studentUserId: string | null, classId: string): WeightedAssessmentBreakdown => {
+        const mapping = classMappingMap.get(classId);
+        
+        if (!mapping) {
+          return { fa1_score: 0, fa2_score: 0, final_score: 0, internal_score: 0, total_weighted: 0 };
+        }
+
+        // Get FA1 attempt
+        const fa1Attempt = mapping.fa1_assessment_id 
+          ? assessmentAttempts?.find(a => 
+              a.student_id === studentUserId && 
+              a.assessment_id === mapping.fa1_assessment_id &&
+              ['completed', 'submitted', 'auto_submitted', 'evaluated', 'absent'].includes(a.status)
+            )
+          : null;
+
+        // Get FA2 attempt
+        const fa2Attempt = mapping.fa2_assessment_id
+          ? assessmentAttempts?.find(a => 
+              a.student_id === studentUserId && 
+              a.assessment_id === mapping.fa2_assessment_id &&
+              ['completed', 'submitted', 'auto_submitted', 'evaluated', 'absent'].includes(a.status)
+            )
+          : null;
+
+        // Get Final attempt
+        const finalAttempt = mapping.final_assessment_id
+          ? assessmentAttempts?.find(a => 
+              a.student_id === studentUserId && 
+              a.assessment_id === mapping.final_assessment_id &&
+              ['completed', 'submitted', 'auto_submitted', 'evaluated', 'absent'].includes(a.status)
+            )
+          : null;
+
+        // Get internal marks for this student
+        const studentInternal = internalMarks?.find(im => 
+          im.student_id === studentUserId && im.class_id === classId
+        );
+
+        const internalMarksData = studentInternal 
+          ? { obtained: Number(studentInternal.marks_obtained), total: Number(studentInternal.total_marks) }
+          : null;
+
+        // Convert to AssessmentAttempt format for the calculator
+        const toAttemptFormat = (attempt: any): AssessmentAttempt | null => {
+          if (!attempt) return null;
+          return {
+            id: attempt.id,
+            score: attempt.score || 0,
+            total_points: attempt.total_points || 0,
+            status: attempt.status as any,
+            percentage: attempt.percentage || 0,
+            passed: attempt.passed || false,
+          } as AssessmentAttempt;
+        };
+
+        const result = calculateWeightedScore(
+          toAttemptFormat(fa1Attempt),
+          toAttemptFormat(fa2Attempt),
+          toAttemptFormat(finalAttempt),
+          internalMarksData
+        );
+
+        return {
+          fa1_score: result.fa1_score,
+          fa2_score: result.fa2_score,
+          final_score: result.final_score,
+          internal_score: result.internal_score,
+          total_weighted: result.total_weighted,
+        };
+      };
 
       // Build student performance map
       const studentPerformanceMap = new Map<string, StudentPerformance>();
       const classMap = new Map(classes?.map(c => [c.id, c.class_name]) || []);
 
       students?.forEach(student => {
-        const studentAssessments = assessmentAttempts?.filter(a => a.student_id === student.user_id) || [];
+        const completedStatuses = ['completed', 'submitted', 'auto_submitted', 'evaluated'];
+        const studentAssessments = assessmentAttempts?.filter(a => 
+          a.student_id === student.user_id && completedStatuses.includes(a.status)
+        ) || [];
         const studentAssignments = assignmentSubmissions?.filter(a => a.student_id === student.user_id) || [];
         const studentXp = xpData.filter(x => x.student_id === student.user_id);
         const studentBadges = badgesData.filter(b => b.student_id === student.user_id);
         const studentProjects = projectsData.filter(p => p.student_id === student.id);
-        
-        // Filter completions using student record ID (students.id)
         const studentCompletions = contentCompletions.filter(c => c.student_id === student.id);
 
-        // Calculate assessment metrics
-        const assessmentAvg = studentAssessments.length > 0
-          ? studentAssessments.reduce((sum, a) => sum + (a.percentage || 0), 0) / studentAssessments.length
-          : 0;
-        const assessmentPassRate = studentAssessments.length > 0
-          ? (studentAssessments.filter(a => a.passed).length / studentAssessments.length) * 100
-          : 0;
+        // Get weighted assessment score
+        const weightedAssessment = getStudentWeightedAssessment(student.user_id, student.class_id);
+
+        // Use weighted assessment total as the assessment average
+        const assessmentAvg = weightedAssessment.total_weighted;
+        
+        // Pass rate based on weighted score (>= 40% is pass)
+        const assessmentPassRate = assessmentAvg >= 40 ? 100 : 0;
 
         // Calculate assignment avg
         let assignmentAvg = 0;
@@ -242,6 +333,7 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
           projects_count: projectsCount,
           course_completion: Math.round(courseCompletion * 10) / 10,
           overall_score: Math.round(overallScore * 10) / 10,
+          weighted_assessment: weightedAssessment,
         });
       });
 
@@ -266,6 +358,7 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
             overall_score: 0,
             topStudents: [],
             allStudents: [],
+            weighted_assessment: { fa1_score: 0, fa2_score: 0, final_score: 0, internal_score: 0, total_weighted: 0 },
           });
           return;
         }
@@ -273,6 +366,15 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
         const sortedStudents = [...classStudents].sort((a, b) => b.overall_score - a.overall_score);
         const top10 = sortedStudents.slice(0, 10).map((s, i) => ({ ...s, rank: i + 1 }));
         const rankedAll = sortedStudents.map((s, i) => ({ ...s, rank: i + 1 }));
+
+        // Calculate class average weighted assessment
+        const classWeightedAvg: WeightedAssessmentBreakdown = {
+          fa1_score: Math.round((classStudents.reduce((sum, s) => sum + (s.weighted_assessment?.fa1_score || 0), 0) / classStudents.length) * 10) / 10,
+          fa2_score: Math.round((classStudents.reduce((sum, s) => sum + (s.weighted_assessment?.fa2_score || 0), 0) / classStudents.length) * 10) / 10,
+          final_score: Math.round((classStudents.reduce((sum, s) => sum + (s.weighted_assessment?.final_score || 0), 0) / classStudents.length) * 10) / 10,
+          internal_score: Math.round((classStudents.reduce((sum, s) => sum + (s.weighted_assessment?.internal_score || 0), 0) / classStudents.length) * 10) / 10,
+          total_weighted: Math.round((classStudents.reduce((sum, s) => sum + (s.weighted_assessment?.total_weighted || 0), 0) / classStudents.length) * 10) / 10,
+        };
 
         classPerformance.push({
           class_id: cls.id,
@@ -288,6 +390,7 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
           overall_score: Math.round((classStudents.reduce((sum, s) => sum + s.overall_score, 0) / classStudents.length) * 10) / 10,
           topStudents: top10,
           allStudents: rankedAll,
+          weighted_assessment: classWeightedAvg,
         });
       });
 
@@ -298,6 +401,15 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
       const allStudents = Array.from(studentPerformanceMap.values());
       const sortedAll = [...allStudents].sort((a, b) => b.overall_score - a.overall_score);
       const top10Overall = sortedAll.slice(0, 10).map((s, i) => ({ ...s, rank: i + 1 }));
+
+      // Calculate institution average weighted assessment
+      const institutionWeightedAvg: WeightedAssessmentBreakdown = allStudents.length > 0 ? {
+        fa1_score: Math.round((allStudents.reduce((sum, s) => sum + (s.weighted_assessment?.fa1_score || 0), 0) / allStudents.length) * 10) / 10,
+        fa2_score: Math.round((allStudents.reduce((sum, s) => sum + (s.weighted_assessment?.fa2_score || 0), 0) / allStudents.length) * 10) / 10,
+        final_score: Math.round((allStudents.reduce((sum, s) => sum + (s.weighted_assessment?.final_score || 0), 0) / allStudents.length) * 10) / 10,
+        internal_score: Math.round((allStudents.reduce((sum, s) => sum + (s.weighted_assessment?.internal_score || 0), 0) / allStudents.length) * 10) / 10,
+        total_weighted: Math.round((allStudents.reduce((sum, s) => sum + (s.weighted_assessment?.total_weighted || 0), 0) / allStudents.length) * 10) / 10,
+      } : { fa1_score: 0, fa2_score: 0, final_score: 0, internal_score: 0, total_weighted: 0 };
 
       return {
         total_students: allStudents.length,
@@ -320,6 +432,7 @@ export function useComprehensiveAnalytics(institutionId: string | undefined) {
         topStudents: top10Overall,
         allStudents: sortedAll.map((s, i) => ({ ...s, rank: i + 1 })),
         classPerformance,
+        weighted_assessment: institutionWeightedAvg,
       };
     },
     enabled: !!institutionId,
