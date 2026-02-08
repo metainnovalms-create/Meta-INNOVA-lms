@@ -33,11 +33,11 @@ export function ClassAnalyticsView({ classes }: ClassAnalyticsViewProps) {
   }
 
   const radarData = selectedClass ? [
-    { metric: 'Assessments', value: selectedClass.assessment_avg, fullMark: 100 },
-    { metric: 'Pass Rate', value: selectedClass.assessment_pass_rate, fullMark: 100 },
-    { metric: 'Assignments', value: selectedClass.assignment_avg, fullMark: 100 },
+    { metric: 'FA1 (20%)', value: (selectedClass.weighted_assessment?.fa1_score || 0) * 5, fullMark: 100 },
+    { metric: 'FA2 (20%)', value: (selectedClass.weighted_assessment?.fa2_score || 0) * 5, fullMark: 100 },
+    { metric: 'Final (40%)', value: (selectedClass.weighted_assessment?.final_score || 0) * 2.5, fullMark: 100 },
+    { metric: 'Internal (20%)', value: (selectedClass.weighted_assessment?.internal_score || 0) * 5, fullMark: 100 },
     { metric: 'Course Progress', value: selectedClass.course_completion, fullMark: 100 },
-    { metric: 'Projects', value: Math.min(selectedClass.avg_projects * 20, 100), fullMark: 100 },
   ] : [];
 
   return (
@@ -47,7 +47,7 @@ export function ClassAnalyticsView({ classes }: ClassAnalyticsViewProps) {
         <div>
           <h3 className="text-lg font-semibold">Class Performance Analytics</h3>
           <p className="text-sm text-muted-foreground">
-            Detailed metrics for each class
+            Weighted Assessment: FA1 20% + FA2 20% + Final 40% + Internal 20%
           </p>
         </div>
         <Select value={selectedClassId} onValueChange={setSelectedClassId}>
@@ -66,6 +66,45 @@ export function ClassAnalyticsView({ classes }: ClassAnalyticsViewProps) {
 
       {selectedClass && (
         <>
+          {/* Weighted Assessment Breakdown */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                Weighted Assessment Breakdown
+              </CardTitle>
+              <CardDescription>Class average scores per assessment category</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+                  <p className="text-sm font-medium text-muted-foreground">FA1 (20%)</p>
+                  <p className="text-3xl font-bold text-blue-600">{selectedClass.weighted_assessment?.fa1_score || 0}</p>
+                  <Progress value={(selectedClass.weighted_assessment?.fa1_score || 0) * 5} className="mt-2 h-1.5" />
+                </div>
+                <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
+                  <p className="text-sm font-medium text-muted-foreground">FA2 (20%)</p>
+                  <p className="text-3xl font-bold text-green-600">{selectedClass.weighted_assessment?.fa2_score || 0}</p>
+                  <Progress value={(selectedClass.weighted_assessment?.fa2_score || 0) * 5} className="mt-2 h-1.5" />
+                </div>
+                <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20 text-center">
+                  <p className="text-sm font-medium text-muted-foreground">Final (40%)</p>
+                  <p className="text-3xl font-bold text-purple-600">{selectedClass.weighted_assessment?.final_score || 0}</p>
+                  <Progress value={(selectedClass.weighted_assessment?.final_score || 0) * 2.5} className="mt-2 h-1.5" />
+                </div>
+                <div className="p-4 rounded-lg bg-orange-500/10 border border-orange-500/20 text-center">
+                  <p className="text-sm font-medium text-muted-foreground">Internal (20%)</p>
+                  <p className="text-3xl font-bold text-orange-600">{selectedClass.weighted_assessment?.internal_score || 0}</p>
+                  <Progress value={(selectedClass.weighted_assessment?.internal_score || 0) * 5} className="mt-2 h-1.5" />
+                </div>
+              </div>
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 flex items-center justify-between">
+                <span className="text-lg font-medium">Total Weighted Assessment</span>
+                <span className="text-3xl font-bold text-primary">{selectedClass.weighted_assessment?.total_weighted || 0}%</span>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* KPI Cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -80,12 +119,12 @@ export function ClassAnalyticsView({ classes }: ClassAnalyticsViewProps) {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Assessment Avg</CardTitle>
+                <CardTitle className="text-sm font-medium">Weighted Assessment</CardTitle>
                 <GraduationCap className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{selectedClass.assessment_avg}%</div>
-                <p className="text-xs text-muted-foreground">{selectedClass.assessment_pass_rate}% pass rate</p>
+                <p className="text-xs text-muted-foreground">class average</p>
               </CardContent>
             </Card>
 
@@ -221,7 +260,7 @@ export function ClassAnalyticsView({ classes }: ClassAnalyticsViewProps) {
       <Card>
         <CardHeader>
           <CardTitle>All Classes Comparison</CardTitle>
-          <CardDescription>Side-by-side metrics for all classes</CardDescription>
+          <CardDescription>Side-by-side metrics for all classes (Weighted Assessment %)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -230,10 +269,11 @@ export function ClassAnalyticsView({ classes }: ClassAnalyticsViewProps) {
                 <tr className="border-b">
                   <th className="text-left py-3 px-2 font-medium">Class</th>
                   <th className="text-center py-3 px-2 font-medium">Students</th>
-                  <th className="text-center py-3 px-2 font-medium">Assessment</th>
-                  <th className="text-center py-3 px-2 font-medium">Pass Rate</th>
-                  <th className="text-center py-3 px-2 font-medium">Assignment</th>
-                  <th className="text-center py-3 px-2 font-medium">XP</th>
+                  <th className="text-center py-3 px-2 font-medium">FA1</th>
+                  <th className="text-center py-3 px-2 font-medium">FA2</th>
+                  <th className="text-center py-3 px-2 font-medium">Final</th>
+                  <th className="text-center py-3 px-2 font-medium">Internal</th>
+                  <th className="text-center py-3 px-2 font-medium">Total</th>
                   <th className="text-center py-3 px-2 font-medium">Overall</th>
                 </tr>
               </thead>
@@ -250,14 +290,15 @@ export function ClassAnalyticsView({ classes }: ClassAnalyticsViewProps) {
                       </div>
                     </td>
                     <td className="text-center py-3 px-2">{cls.total_students}</td>
-                    <td className="text-center py-3 px-2">{cls.assessment_avg}%</td>
+                    <td className="text-center py-3 px-2">{cls.weighted_assessment?.fa1_score || 0}</td>
+                    <td className="text-center py-3 px-2">{cls.weighted_assessment?.fa2_score || 0}</td>
+                    <td className="text-center py-3 px-2">{cls.weighted_assessment?.final_score || 0}</td>
+                    <td className="text-center py-3 px-2">{cls.weighted_assessment?.internal_score || 0}</td>
                     <td className="text-center py-3 px-2">
-                      <Badge variant={cls.assessment_pass_rate >= 70 ? 'default' : 'secondary'}>
-                        {cls.assessment_pass_rate}%
+                      <Badge variant={cls.weighted_assessment?.total_weighted && cls.weighted_assessment.total_weighted >= 40 ? 'default' : 'secondary'}>
+                        {cls.weighted_assessment?.total_weighted || 0}%
                       </Badge>
                     </td>
-                    <td className="text-center py-3 px-2">{cls.assignment_avg}%</td>
-                    <td className="text-center py-3 px-2">{cls.total_xp.toLocaleString()}</td>
                     <td className="text-center py-3 px-2">
                       <Badge variant="outline" className="font-semibold">
                         {cls.overall_score}
@@ -292,8 +333,8 @@ function StudentRankCard({ student, rank }: { student: StudentPerformance; rank:
       </div>
       <div className="flex items-center gap-6 text-sm">
         <div className="text-center">
-          <p className="font-semibold">{student.assessment_avg}%</p>
-          <p className="text-xs text-muted-foreground">Assessments</p>
+          <p className="font-semibold">{student.weighted_assessment?.total_weighted || 0}%</p>
+          <p className="text-xs text-muted-foreground">Weighted</p>
         </div>
         <div className="text-center">
           <p className="font-semibold">{student.assignment_avg}%</p>
@@ -312,13 +353,6 @@ function StudentRankCard({ student, rank }: { student: StudentPerformance; rank:
             {student.badges_count}
           </p>
           <p className="text-xs text-muted-foreground">Badges</p>
-        </div>
-        <div className="text-center">
-          <p className="font-semibold flex items-center gap-1">
-            <FolderKanban className="h-3 w-3 text-blue-500" />
-            {student.projects_count}
-          </p>
-          <p className="text-xs text-muted-foreground">Projects</p>
         </div>
         <div className="text-center">
           <p className="font-semibold text-primary">{student.overall_score}</p>
