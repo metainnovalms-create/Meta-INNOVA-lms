@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Download, IndianRupee } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/utils/attendanceHelpers';
-import { STANDARD_DAYS_PER_MONTH } from '@/services/payroll.service';
+import { STANDARD_DAYS_PER_MONTH, getDaysInMonthForPayroll } from '@/services/payroll.service';
 
 interface MonthlyBreakdownTabProps {
   month: number;
@@ -93,11 +93,14 @@ export function MonthlyBreakdownTab({ month, year }: MonthlyBreakdownTabProps) {
       // Calculate breakdown for officers
       const breakdownData: EmployeeBreakdown[] = [];
       
+      // Get actual days in the selected month
+      const actualDaysInMonth = getDaysInMonthForPayroll(year, month);
+      
       (officers || []).forEach((officer: any) => {
         const att = attendanceMap.get(officer.id) || { present: 0, absent: 0, leave: 0 };
-        const monthlySalary = officer.monthly_salary || (officer.hourly_rate ? officer.hourly_rate * 8 * STANDARD_DAYS_PER_MONTH : 0);
+        const monthlySalary = officer.monthly_salary || (officer.hourly_rate ? officer.hourly_rate * 8 * actualDaysInMonth : 0);
         
-        const perDaySalary = monthlySalary / STANDARD_DAYS_PER_MONTH;
+        const perDaySalary = monthlySalary / actualDaysInMonth;
         const lopDays = att.absent;
         const lopDeduction = lopDays * perDaySalary;
         
@@ -119,7 +122,7 @@ export function MonthlyBreakdownTab({ month, year }: MonthlyBreakdownTabProps) {
           name: officer.full_name,
           employee_id: officer.employee_id,
           designation: officer.designation,
-          working_days: STANDARD_DAYS_PER_MONTH,
+          working_days: actualDaysInMonth,
           present_days: att.present,
           absent_days: att.absent,
           leave_days: att.leave,
@@ -146,7 +149,7 @@ export function MonthlyBreakdownTab({ month, year }: MonthlyBreakdownTabProps) {
         
         const att = attendanceMap.get(profile.id) || { present: 0, absent: 0, leave: 0 };
         
-        const perDaySalary = monthlySalary / STANDARD_DAYS_PER_MONTH;
+        const perDaySalary = monthlySalary / actualDaysInMonth;
         const lopDays = att.absent;
         const lopDeduction = lopDays * perDaySalary;
         
@@ -170,7 +173,7 @@ export function MonthlyBreakdownTab({ month, year }: MonthlyBreakdownTabProps) {
           name: profile.name,
           employee_id: profile.employee_id,
           designation: profile.designation,
-          working_days: STANDARD_DAYS_PER_MONTH,
+          working_days: actualDaysInMonth,
           present_days: att.present,
           absent_days: att.absent,
           leave_days: att.leave,
