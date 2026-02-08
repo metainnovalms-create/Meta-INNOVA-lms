@@ -28,6 +28,7 @@ const FEATURE_QUICK_ACTIONS: Record<SystemAdminFeature, { label: string; icon: L
   officer_management: { label: 'Officers', icon: Users, path: '/system-admin/officers' },
   project_management: { label: 'Projects', icon: FolderKanban, path: '/system-admin/project-management' },
   inventory_management: { label: 'Inventory', icon: Package, path: '/system-admin/inventory-management' },
+  company_inventory: { label: 'Company Inventory', icon: Package, path: '/system-admin/company-inventory' },
   attendance_payroll: { label: 'Attendance', icon: CalendarCheck, path: '/system-admin/attendance' },
   leave_approvals: { label: 'Leave Approvals', icon: CalendarCheck, path: '/system-admin/leave-approvals' },
   leave_management: { label: 'Leave Management', icon: Calendar, path: '/system-admin/leave-management' },
