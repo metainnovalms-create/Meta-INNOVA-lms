@@ -18,22 +18,60 @@ interface InstitutionOverviewProps {
 
 export function InstitutionOverview({ data, institutionName }: InstitutionOverviewProps) {
   const radarData = [
-    { metric: 'Assessments', value: data.assessment_avg, fullMark: 100 },
-    { metric: 'Pass Rate', value: data.assessment_pass_rate, fullMark: 100 },
-    { metric: 'Assignments', value: data.assignment_avg, fullMark: 100 },
+    { metric: 'FA1 (20%)', value: (data.weighted_assessment?.fa1_score || 0) * 5, fullMark: 100 },
+    { metric: 'FA2 (20%)', value: (data.weighted_assessment?.fa2_score || 0) * 5, fullMark: 100 },
+    { metric: 'Final (40%)', value: (data.weighted_assessment?.final_score || 0) * 2.5, fullMark: 100 },
+    { metric: 'Internal (20%)', value: (data.weighted_assessment?.internal_score || 0) * 5, fullMark: 100 },
     { metric: 'Course Progress', value: data.course_completion, fullMark: 100 },
-    { metric: 'Engagement', value: Math.min(data.total_xp / (data.total_students || 1) / 10, 100), fullMark: 100 },
   ];
 
   const classComparisonData = data.classPerformance.map(cls => ({
     name: cls.class_name,
-    'Avg Score': cls.assessment_avg,
+    'Avg Score': cls.weighted_assessment?.total_weighted || 0,
     'Pass Rate': cls.assessment_pass_rate,
-    'Overall': cls.overall_score,
   }));
 
   return (
     <div className="space-y-6">
+      {/* Weighted Assessment Breakdown */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <GraduationCap className="h-5 w-5" />
+            Weighted Assessment Overview
+          </CardTitle>
+          <CardDescription>Institution average scores per assessment category (FA1 20% + FA2 20% + Final 40% + Internal 20%)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+              <p className="text-sm font-medium text-muted-foreground">FA1 (20%)</p>
+              <p className="text-3xl font-bold text-blue-600">{data.weighted_assessment?.fa1_score || 0}</p>
+              <Progress value={(data.weighted_assessment?.fa1_score || 0) * 5} className="mt-2 h-1.5" />
+            </div>
+            <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
+              <p className="text-sm font-medium text-muted-foreground">FA2 (20%)</p>
+              <p className="text-3xl font-bold text-green-600">{data.weighted_assessment?.fa2_score || 0}</p>
+              <Progress value={(data.weighted_assessment?.fa2_score || 0) * 5} className="mt-2 h-1.5" />
+            </div>
+            <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20 text-center">
+              <p className="text-sm font-medium text-muted-foreground">Final (40%)</p>
+              <p className="text-3xl font-bold text-purple-600">{data.weighted_assessment?.final_score || 0}</p>
+              <Progress value={(data.weighted_assessment?.final_score || 0) * 2.5} className="mt-2 h-1.5" />
+            </div>
+            <div className="p-4 rounded-lg bg-orange-500/10 border border-orange-500/20 text-center">
+              <p className="text-sm font-medium text-muted-foreground">Internal (20%)</p>
+              <p className="text-3xl font-bold text-orange-600">{data.weighted_assessment?.internal_score || 0}</p>
+              <Progress value={(data.weighted_assessment?.internal_score || 0) * 5} className="mt-2 h-1.5" />
+            </div>
+          </div>
+          <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 flex items-center justify-between">
+            <span className="text-lg font-medium">Total Weighted Assessment</span>
+            <span className="text-3xl font-bold text-primary">{data.weighted_assessment?.total_weighted || 0}%</span>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
         <Card>
@@ -49,12 +87,12 @@ export function InstitutionOverview({ data, institutionName }: InstitutionOvervi
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Assessment Avg</CardTitle>
+            <CardTitle className="text-sm font-medium">Weighted Avg</CardTitle>
             <GraduationCap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data.assessment_avg}%</div>
-            <p className="text-xs text-muted-foreground">{data.assessment_pass_rate}% pass rate</p>
+            <p className="text-xs text-muted-foreground">assessment score</p>
           </CardContent>
         </Card>
 
@@ -160,7 +198,7 @@ export function InstitutionOverview({ data, institutionName }: InstitutionOvervi
               <GraduationCap className="h-4 w-4" />
               Class Performance Comparison
             </CardTitle>
-            <CardDescription>Average scores by class</CardDescription>
+            <CardDescription>Weighted assessment scores by class</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -237,7 +275,7 @@ function StudentRankCard({ student, rank }: { student: StudentPerformance; rank:
       </div>
       <div className="flex items-center gap-6 text-sm">
         <div className="text-center">
-          <p className="font-semibold">{student.assessment_avg}%</p>
+          <p className="font-semibold">{student.weighted_assessment?.total_weighted || 0}%</p>
           <p className="text-xs text-muted-foreground">Assessments</p>
         </div>
         <div className="text-center">
