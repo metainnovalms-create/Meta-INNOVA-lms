@@ -26,6 +26,7 @@ import OfficerManagement from "./pages/system-admin/OfficerManagement";
 import SystemAdminOfficerAttendance from "./pages/system-admin/OfficerAttendance";
 import StaffAttendancePayroll from "./pages/system-admin/StaffAttendancePayroll";
 import InventoryManagement from "./pages/system-admin/InventoryManagement";
+import CompanyInventory from "./pages/system-admin/CompanyInventory";
 import CredentialManagement from "./pages/system-admin/CredentialManagement";
 import StudentDashboard from "./pages/student/Dashboard";
 import StudentCourses from "./pages/student/Courses";
@@ -143,6 +144,7 @@ import OfficerAssignments from "./pages/officer/Assignments";
 import ManagementAssignments from "./pages/management/Assignments";
 import ReportsManagement from "./pages/system-admin/ReportsManagement";
 import NewsletterManagement from "./pages/system-admin/NewsletterManagement";
+import PlatformGuide from "./pages/system-admin/PlatformGuide";
 import Newsletters from "./pages/shared/Newsletters";
 
 // HR Management imports
@@ -412,6 +414,14 @@ const App = () => (
               }
             />
             <Route
+              path="/system-admin/company-inventory"
+              element={
+                <ProtectedRoute allowedRoles={['system_admin']} requiredFeature="company_inventory">
+                  <CompanyInventory />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/system-admin/course-management"
               element={
                 <ProtectedRoute allowedRoles={['system_admin']} requiredFeature="course_management">
@@ -464,6 +474,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['system_admin']}>
                   <SystemAdminPositionManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/system-admin/platform-guide"
+              element={
+                <ProtectedRoute allowedRoles={['system_admin']}>
+                  <PlatformGuide />
                 </ProtectedRoute>
               }
             />
