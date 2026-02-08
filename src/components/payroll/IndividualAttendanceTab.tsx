@@ -613,6 +613,15 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
         const paidDays = isLop ? 0 : 1;
         const lopDays = isLop ? 1 : 0;
 
+        // If there's an existing leave record for this day, delete it first to allow re-edit
+        if (selectedRecord.leave_id) {
+          const { error: deleteLeaveError } = await supabase
+            .from('leave_applications')
+            .delete()
+            .eq('id', selectedRecord.leave_id);
+          if (deleteLeaveError) throw deleteLeaveError;
+        }
+
         // If there is already an attendance record for this day, remove it to avoid showing times on a leave day.
         if (selectedRecord.attendance_id) {
           const { error: deleteAttendanceError } = await supabase
@@ -667,7 +676,18 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
               ? 'Marked as Sick Leave'
               : 'Marked as Casual Leave'
         );
-        // Regular attendance correction with check-in/out times
+      } else {
+        // Regular attendance correction with check-in/out times (Present)
+        
+        // If there's an existing leave record for this day, delete it first (converting leave to present)
+        if (selectedRecord.leave_id) {
+          const { error: deleteLeaveError } = await supabase
+            .from('leave_applications')
+            .delete()
+            .eq('id', selectedRecord.leave_id);
+          if (deleteLeaveError) throw deleteLeaveError;
+        }
+
         let totalHoursWorked = null;
         let overtimeHours = null;
 
