@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { InstitutionDataProvider } from "@/contexts/InstitutionDataContext";
 import { BrandingProvider } from "@/contexts/BrandingContext";
-import { PlatformSettingsProvider } from "@/contexts/PlatformSettingsContext";
 import { SessionTimeoutProvider } from "@/components/layout/SessionTimeoutProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Login from "./pages/Login";
@@ -477,14 +476,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/system-admin/platform-guide"
-              element={
-                <ProtectedRoute allowedRoles={['system_admin']}>
-                  <PlatformGuide />
-                </ProtectedRoute>
-              }
-            />
+            
             <Route
               path="/system-admin/credential-management"
               element={
