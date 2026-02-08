@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import {
   Select,
   SelectContent,
@@ -159,11 +159,11 @@ export function CreateJobDialog({ open, onOpenChange, editJob }: CreateJobDialog
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
+            <RichTextEditor
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={4}
+              onChange={(value) => setFormData({ ...formData, description: value })}
+              placeholder="Enter job description with formatting..."
+              minHeight="120px"
             />
           </div>
           <div className="flex justify-end gap-2">
