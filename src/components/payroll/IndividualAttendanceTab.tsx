@@ -116,6 +116,7 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
     check_in_time: '',
     check_out_time: '',
     reason: '',
+    attendance_type: 'present' as 'present' | 'paid_leave' | 'lop' | 'leave',
   });
   const [isSaving, setIsSaving] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -585,6 +586,8 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
         ? format(parseISO(record.check_out_time), "yyyy-MM-dd'T'HH:mm")
         : `${record.date}T18:00`,
       reason: '',
+      // If it's already a leave day: paid_leave when is_paid_leave=true, otherwise lop
+      attendance_type: record.leave_id ? (record.is_paid_leave ? 'paid_leave' : 'lop') : 'present',
     });
     setCorrectionDialogOpen(true);
   };
@@ -599,24 +602,103 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
 
     setIsSaving(true);
     try {
-      let totalHoursWorked = null;
-      let overtimeHours = null;
-
-      if (correctionData.check_in_time && correctionData.check_out_time) {
-        const checkIn = new Date(correctionData.check_in_time);
-        const checkOut = new Date(correctionData.check_out_time);
-        totalHoursWorked = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
-        overtimeHours = Math.max(0, totalHoursWorked - 8);
-      }
-
       const isOfficer = selectedEmployee.type === 'officer';
       const tableName = isOfficer ? 'officer_attendance' : 'staff_attendance';
+      const attendanceType = correctionData.attendance_type;
+      
+      // Leave corrections are stored in leave_applications (NOT in officer_attendance.status)
+      if (attendanceType === 'paid_leave' || attendanceType === 'lop' || attendanceType === 'leave') {
+        const leaveType = attendanceType === 'leave' ? 'sick' : 'casual';
+        const isLop = attendanceType === 'lop';
+        const paidDays = isLop ? 0 : 1;
+        const lopDays = isLop ? 1 : 0;
 
-      if (selectedRecord.attendance_id) {
-        // Update existing record
-        const { error: updateError } = await supabase
-          .from(tableName)
-          .update({
+        // If there is already an attendance record for this day, remove it to avoid showing times on a leave day.
+        if (selectedRecord.attendance_id) {
+          const { error: deleteAttendanceError } = await supabase
+            .from(tableName)
+            .delete()
+            .eq('id', selectedRecord.attendance_id);
+          if (deleteAttendanceError) throw deleteAttendanceError;
+        }
+
+        // Create a single-day approved leave entry
+        const leavePayload = {
+          applicant_id: selectedEmployee.user_id,
+          applicant_name: selectedEmployee.name,
+          applicant_type: selectedEmployee.type,
+          officer_id: isOfficer ? selectedEmployee.id : null,
+          institution_id: selectedEmployee.institution_id,
+          start_date: selectedRecord.date,
+          end_date: selectedRecord.date,
+          leave_type: leaveType,
+          reason: correctionData.reason,
+          total_days: 1,
+          is_lop: isLop,
+          paid_days: paidDays,
+          lop_days: lopDays,
+          status: 'approved',
+          final_approved_by: user.id,
+          final_approved_by_name: user.name,
+          final_approved_at: new Date().toISOString(),
+        };
+
+        const { error: leaveInsertError } = await supabase
+          .from('leave_applications')
+          .insert(leavePayload as never);
+        if (leaveInsertError) throw leaveInsertError;
+
+        // Log correction
+        await supabase.from('attendance_corrections').insert({
+          attendance_id: selectedRecord.attendance_id || 'new',
+          attendance_type: selectedEmployee.type,
+          field_corrected: 'leave_application',
+          original_value: selectedRecord.leave_id ? 'leave' : 'none',
+          new_value: `${attendanceType}:${leaveType}:${isLop ? 'lop' : 'paid'}`,
+          reason: correctionData.reason,
+          corrected_by: user.id,
+          corrected_by_name: user.name,
+        });
+
+        toast.success(
+          attendanceType === 'lop'
+            ? 'Marked as LOP'
+            : attendanceType === 'leave'
+              ? 'Marked as Sick Leave'
+              : 'Marked as Casual Leave'
+        );
+        // Regular attendance correction with check-in/out times
+        let totalHoursWorked = null;
+        let overtimeHours = null;
+
+        if (correctionData.check_in_time && correctionData.check_out_time) {
+          const checkIn = new Date(correctionData.check_in_time);
+          const checkOut = new Date(correctionData.check_out_time);
+          totalHoursWorked = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
+          overtimeHours = Math.max(0, totalHoursWorked - 8);
+        }
+
+        if (selectedRecord.attendance_id) {
+          // Update existing record
+          const { error: updateError } = await supabase
+            .from(tableName)
+            .update({
+              check_in_time: new Date(correctionData.check_in_time).toISOString(),
+              check_out_time: new Date(correctionData.check_out_time).toISOString(),
+              total_hours_worked: Math.round(totalHoursWorked! * 100) / 100,
+              overtime_hours: Math.round(overtimeHours! * 100) / 100,
+              is_manual_correction: true,
+              corrected_by: user.id,
+              correction_reason: correctionData.reason,
+              status: 'checked_out',
+            })
+            .eq('id', selectedRecord.attendance_id);
+
+          if (updateError) throw updateError;
+        } else {
+          // Create new attendance record for unmarked day
+          const insertData: Record<string, unknown> = {
+            date: selectedRecord.date,
             check_in_time: new Date(correctionData.check_in_time).toISOString(),
             check_out_time: new Date(correctionData.check_out_time).toISOString(),
             total_hours_worked: Math.round(totalHoursWorked! * 100) / 100,
@@ -625,54 +707,40 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
             corrected_by: user.id,
             correction_reason: correctionData.reason,
             status: 'checked_out',
-          })
-          .eq('id', selectedRecord.attendance_id);
+          };
 
-        if (updateError) throw updateError;
-      } else {
-        // Create new attendance record for unmarked day
-        const insertData: Record<string, unknown> = {
-          date: selectedRecord.date,
-          check_in_time: new Date(correctionData.check_in_time).toISOString(),
-          check_out_time: new Date(correctionData.check_out_time).toISOString(),
-          total_hours_worked: Math.round(totalHoursWorked! * 100) / 100,
-          overtime_hours: Math.round(overtimeHours! * 100) / 100,
-          is_manual_correction: true,
+          if (isOfficer) {
+            insertData.officer_id = selectedEmployee.id;
+          } else {
+            insertData.user_id = selectedEmployee.user_id;
+          }
+          
+          if (selectedEmployee.institution_id) {
+            insertData.institution_id = selectedEmployee.institution_id;
+          }
+
+          const { error: insertError } = await supabase
+            .from(tableName)
+            .insert(insertData as never);
+
+          if (insertError) throw insertError;
+        }
+
+        // Log correction
+        await supabase.from('attendance_corrections').insert({
+          attendance_id: selectedRecord.attendance_id || 'new',
+          attendance_type: selectedEmployee.type,
+          field_corrected: 'check_in_time, check_out_time',
+          original_value: `${selectedRecord.check_in_time || 'null'}, ${selectedRecord.check_out_time || 'null'}`,
+          new_value: `${correctionData.check_in_time}, ${correctionData.check_out_time}`,
+          reason: correctionData.reason,
           corrected_by: user.id,
-          correction_reason: correctionData.reason,
-          status: 'checked_out',
-        };
+          corrected_by_name: user.name,
+        });
 
-        if (isOfficer) {
-          insertData.officer_id = selectedEmployee.id;
-        } else {
-          insertData.user_id = selectedEmployee.user_id;
-        }
-        
-        if (selectedEmployee.institution_id) {
-          insertData.institution_id = selectedEmployee.institution_id;
-        }
-
-        const { error: insertError } = await supabase
-          .from(tableName)
-          .insert(insertData as never);
-
-        if (insertError) throw insertError;
+        toast.success('Attendance corrected successfully');
       }
-
-      // Log correction
-      await supabase.from('attendance_corrections').insert({
-        attendance_id: selectedRecord.attendance_id || 'new',
-        attendance_type: selectedEmployee.type,
-        field_corrected: 'check_in_time, check_out_time',
-        original_value: `${selectedRecord.check_in_time || 'null'}, ${selectedRecord.check_out_time || 'null'}`,
-        new_value: `${correctionData.check_in_time}, ${correctionData.check_out_time}`,
-        reason: correctionData.reason,
-        corrected_by: user.id,
-        corrected_by_name: user.name,
-      });
-
-      toast.success('Attendance corrected successfully');
+      
       setCorrectionDialogOpen(false);
       loadAllData();
     } catch (error) {
@@ -960,7 +1028,9 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
                   </CardHeader>
                   <CardContent>
                     {(() => {
-                      const perDaySalary = salaryData.monthlySalary / 30;
+                      // Use actual days in month instead of fixed 30
+                      const daysInMonth = getDaysInMonth(new Date(localYear, localMonth - 1));
+                      const perDaySalary = salaryData.monthlySalary / daysInMonth;
                       // Only deduct for LOP days (approved LOP + unmarked), not paid leave
                       const lopDeduction = perDaySalary * (stats?.totalLopDays || 0);
                       const calculatedOvertimePay = (stats?.approvedOvertime || 0) * salaryData.hourlyRate * salaryData.overtimeMultiplier;
@@ -968,43 +1038,54 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
                       const netPayout = salaryData.monthlySalary - lopDeduction + overtimePay;
                       
                       return (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground uppercase">Monthly Salary</p>
-                            <p className="text-xl font-bold">{formatCurrency(salaryData.monthlySalary)}</p>
+                        <div className="space-y-4">
+                          {/* Per Day Salary Display */}
+                          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase">Per Day Salary ({format(new Date(localYear, localMonth - 1), 'MMMM yyyy')})</p>
+                              <p className="text-sm text-muted-foreground">{formatCurrency(salaryData.monthlySalary)} ÷ {daysInMonth} days</p>
+                            </div>
+                            <p className="text-xl font-bold text-primary">{formatCurrency(perDaySalary)}</p>
                           </div>
-                          <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground uppercase">LOP Deduction ({stats?.totalLopDays} days)</p>
-                            <p className="text-xl font-bold text-red-600">-{formatCurrency(lopDeduction)}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground uppercase flex items-center gap-1">
-                              Overtime Pay ({stats?.approvedOvertime?.toFixed(1)}h)
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-4 w-4"
-                                onClick={() => setEditingOvertimePay(!editingOvertimePay)}
-                              >
-                                <Edit2 className="h-3 w-3" />
-                              </Button>
-                            </p>
-                            {editingOvertimePay ? (
-                              <Input
-                                type="number"
-                                value={customOvertimePay ?? calculatedOvertimePay}
-                                onChange={(e) => setCustomOvertimePay(parseFloat(e.target.value) || 0)}
-                                onBlur={() => setEditingOvertimePay(false)}
-                                className="w-28 h-8"
-                                autoFocus
-                              />
-                            ) : (
-                              <p className="text-xl font-bold text-green-600">+{formatCurrency(overtimePay)}</p>
-                            )}
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground uppercase">Net Payout</p>
-                            <p className="text-2xl font-bold text-primary">{formatCurrency(netPayout)}</p>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground uppercase">Monthly Salary</p>
+                              <p className="text-xl font-bold">{formatCurrency(salaryData.monthlySalary)}</p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground uppercase">LOP Deduction ({stats?.totalLopDays} days)</p>
+                              <p className="text-xl font-bold text-destructive">-{formatCurrency(lopDeduction)}</p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground uppercase flex items-center gap-1">
+                                Overtime Pay ({stats?.approvedOvertime?.toFixed(1)}h)
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-4 w-4"
+                                  onClick={() => setEditingOvertimePay(!editingOvertimePay)}
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                              </p>
+                              {editingOvertimePay ? (
+                                <Input
+                                  type="number"
+                                  value={customOvertimePay ?? calculatedOvertimePay}
+                                  onChange={(e) => setCustomOvertimePay(parseFloat(e.target.value) || 0)}
+                                  onBlur={() => setEditingOvertimePay(false)}
+                                  className="w-28 h-8"
+                                  autoFocus
+                                />
+                              ) : (
+                                <p className="text-xl font-bold text-green-600">+{formatCurrency(overtimePay)}</p>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground uppercase">Net Payout</p>
+                              <p className="text-2xl font-bold text-primary">{formatCurrency(netPayout)}</p>
+                            </div>
                           </div>
                           <div className="col-span-2 md:col-span-4 pt-2 border-t mt-2">
                             <Button 
@@ -1216,7 +1297,7 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
 
       {/* Correction Dialog */}
       <Dialog open={correctionDialogOpen} onOpenChange={setCorrectionDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Correct Attendance</DialogTitle>
             <DialogDescription>
@@ -1224,22 +1305,86 @@ export function IndividualAttendanceTab({ month, year }: IndividualAttendanceTab
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Attendance Type Selector */}
             <div className="space-y-2">
-              <Label>Check-in Time</Label>
-              <Input
-                type="datetime-local"
-                value={correctionData.check_in_time}
-                onChange={(e) => setCorrectionData((prev) => ({ ...prev, check_in_time: e.target.value }))}
-              />
+              <Label>Attendance Type</Label>
+              <Select
+                value={correctionData.attendance_type}
+                onValueChange={(value: 'present' | 'paid_leave' | 'lop' | 'leave') => 
+                  setCorrectionData((prev) => ({ ...prev, attendance_type: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="present">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      Present (with check-in/out)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="paid_leave">
+                    <div className="flex items-center gap-2">
+                      <CalendarCheck className="h-4 w-4 text-blue-500" />
+                      Casual Leave (Paid)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="lop">
+                    <div className="flex items-center gap-2">
+                      <CalendarOff className="h-4 w-4 text-red-500" />
+                      LOP (Loss of Pay)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="leave">
+                    <div className="flex items-center gap-2">
+                      <TreePalm className="h-4 w-4 text-amber-500" />
+                      Sick Leave (Paid)
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Check-out Time</Label>
-              <Input
-                type="datetime-local"
-                value={correctionData.check_out_time}
-                onChange={(e) => setCorrectionData((prev) => ({ ...prev, check_out_time: e.target.value }))}
-              />
-            </div>
+
+            {/* Check-in/out fields only for Present type */}
+            {correctionData.attendance_type === 'present' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Check-in Time</Label>
+                  <Input
+                    type="datetime-local"
+                    value={correctionData.check_in_time}
+                    onChange={(e) => setCorrectionData((prev) => ({ ...prev, check_in_time: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Check-out Time</Label>
+                  <Input
+                    type="datetime-local"
+                    value={correctionData.check_out_time}
+                    onChange={(e) => setCorrectionData((prev) => ({ ...prev, check_out_time: e.target.value }))}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Info message for leave types */}
+            {correctionData.attendance_type !== 'present' && (
+              <div className="p-3 bg-muted rounded-md">
+                <p className="text-sm text-muted-foreground">
+                  {correctionData.attendance_type === 'paid_leave' && (
+                    <>This day will be marked as <strong>Casual Leave (Paid)</strong> - no salary deduction will be applied.</>
+                  )}
+                  {correctionData.attendance_type === 'lop' && (
+                    <>This day will be marked as <strong>LOP</strong> - salary will be deducted for this day.</>
+                  )}
+                  {correctionData.attendance_type === 'leave' && (
+                    <>This day will be marked as <strong>Sick Leave (Paid)</strong> - no salary deduction will be applied.</>
+                  )}
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Reason for Correction *</Label>
               <Textarea
