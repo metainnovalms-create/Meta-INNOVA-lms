@@ -30,6 +30,22 @@ interface PublishingSelectorProps {
   restrictToInstitution?: string; // Officer can only publish to their institution
 }
 
+// Helper function to format class name with section, avoiding duplicates
+const formatClassName = (className: string, section: string | null): string => {
+  if (!section) return className;
+  
+  // Check if class name already ends with the section (case insensitive)
+  const upperClassName = className.toUpperCase();
+  const upperSection = section.toUpperCase();
+  
+  // Check if class name ends with the section (e.g., "Grade 3A" ends with "A")
+  if (upperClassName.endsWith(upperSection)) {
+    return className; // Don't append section, it's already in the name
+  }
+  
+  return `${className} ${section}`;
+};
+
 export const PublishingSelector = ({ value, onChange, restrictToInstitution }: PublishingSelectorProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInstitutions, setSelectedInstitutions] = useState<Map<string, Set<string>>>(new Map());
@@ -155,9 +171,7 @@ export const PublishingSelector = ({ value, onChange, restrictToInstitution }: P
             institution_id: institutionId,
             institution_name: institution.name,
             class_ids: Array.from(classIds),
-            class_names: selectedClasses.map((c) => 
-              c.section ? `${c.class_name} ${c.section}` : c.class_name
-            )
+            class_names: selectedClasses.map((c) => formatClassName(c.class_name, c.section))
           });
         }
       }
@@ -328,7 +342,7 @@ export const PublishingSelector = ({ value, onChange, restrictToInstitution }: P
                             }
                           />
                           <Label htmlFor={`class-${classItem.id}`} className="text-sm cursor-pointer">
-                            {classItem.section ? `${classItem.class_name} ${classItem.section}` : classItem.class_name}
+                            {formatClassName(classItem.class_name, classItem.section)}
                           </Label>
                         </div>
                       ))}
