@@ -113,14 +113,19 @@ export interface PayrollDashboardStats {
   uninformed_leave_count: number;
 }
 
-// LOP Calculation using standard 30 days
-export const calculatePerDaySalary = (monthlySalary: number): number => {
-  return monthlySalary / STANDARD_DAYS_PER_MONTH;
+// LOP Calculation - now uses actual days in month
+export const calculatePerDaySalary = (monthlySalary: number, daysInMonth: number = STANDARD_DAYS_PER_MONTH): number => {
+  return monthlySalary / daysInMonth;
 };
 
-export const calculateLOPDeduction = (monthlySalary: number, lopDays: number): number => {
-  const perDaySalary = calculatePerDaySalary(monthlySalary);
+export const calculateLOPDeduction = (monthlySalary: number, lopDays: number, daysInMonth: number = STANDARD_DAYS_PER_MONTH): number => {
+  const perDaySalary = calculatePerDaySalary(monthlySalary, daysInMonth);
   return perDaySalary * lopDays;
+};
+
+// Get actual days in a month
+export const getDaysInMonthForPayroll = (year: number, month: number): number => {
+  return new Date(year, month, 0).getDate();
 };
 
 // Helper: Get working days for a month (uses manual calendar day types if available)
