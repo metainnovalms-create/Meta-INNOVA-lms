@@ -44,7 +44,8 @@ export type SystemAdminFeature =
   | 'news_feeds'
   | 'ask_metova'
   | 'settings'
-  | 'position_management';
+  | 'position_management'
+  | 'company_inventory';
 
 export const ALL_SYSTEM_ADMIN_FEATURES: SystemAdminFeature[] = [
   'institution_management',
@@ -78,6 +79,7 @@ export const ALL_SYSTEM_ADMIN_FEATURES: SystemAdminFeature[] = [
   'ask_metova',
   'settings',
   'position_management',
+  'company_inventory',
 ];
 
 export interface PositionPermissions {
